@@ -44,6 +44,7 @@ public class shipMovement : MonoBehaviour
         if(Input.GetButton("Shoot" )&& Time.time > canFire){
             FireProjectile(power);
             canFire = Time.time + fireSpeed;
+            SoundManager.Play("laser");
         }
     }
     void FixedUpdate()

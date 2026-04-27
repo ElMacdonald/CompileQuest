@@ -118,7 +118,7 @@ public class AIEvaluator : MonoBehaviour
         // --- Now load the feedback into the UI ---
         // This replaces the TextFileReader.LoadTextFile call that was on the button.
         if (textFileReader != null)
-            textFileReader.LoadTextFile();
+            textFileReader.DisplayFeedback(AIFeedbackStore.feedback);
         else
             Debug.LogWarning("[AIEvaluator] textFileReader is not assigned. Assign it in the Inspector.");
     }

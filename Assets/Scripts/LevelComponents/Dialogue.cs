@@ -16,6 +16,8 @@ public class Dialogue : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        dialogueBox = GameObject.Find("Dialogue Panel");
+        dialogueText = dialogueBox.GetComponentInChildren<TextMeshProUGUI>();
         NextLine();
     }
 

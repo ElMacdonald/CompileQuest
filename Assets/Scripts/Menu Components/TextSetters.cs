@@ -7,6 +7,14 @@ public class TextFileReader : MonoBehaviour
     public TextMeshProUGUI textDisplay;
     public GameObject panel;
 
+    // Called by button events that previously used the old file-based LoadTextFile.
+    // Reads from the in-memory AIFeedbackStore instead of fetching ai_feedback.txt
+    // (which fails in WebGL because Application.dataPath resolves to a server URL).
+    public void LoadTextFile()
+    {
+        DisplayFeedback(AIFeedbackStore.feedback);
+    }
+
     // ✅ NEW: This replaces file reading
     public void DisplayFeedback(string feedback)
     {

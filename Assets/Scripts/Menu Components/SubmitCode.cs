@@ -14,6 +14,12 @@ public class SubmitCode : MonoBehaviour
 
     public void Submit()
     {
+        if (APIManager.Instance == null)
+        {
+            Debug.LogError("[SubmitCode] APIManager not found in scene!");
+            return;
+        }
+
         string playerCode = inputField.text;
 
         if (loadingSpinner != null)
@@ -27,6 +33,7 @@ public class SubmitCode : MonoBehaviour
         if (loadingSpinner != null)
             loadingSpinner.SetActive(false);
 
+        AIFeedbackStore.feedback = feedback;
         feedbackUI.DisplayFeedback(feedback);
     }
 }

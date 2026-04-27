@@ -24,6 +24,7 @@ public class ReadBox : MonoBehaviour
 
     void Start()
     {
+        playerMovement = FindObjectOfType<Movement>();
         if (GameObject.Find("Objective Manager") != null)
             objTracker = GameObject.Find("Objective Manager").GetComponent<ObjectiveTracker>();
     }
@@ -82,7 +83,6 @@ public class ReadBox : MonoBehaviour
     }
 
     // Evaluates a simple arithmetic expression: supports +, -, *, /, %
-    // Handles operator precedence (* / % before + -)
     float EvaluateExpression(string expr)
     {
         expr = expr.Trim();
@@ -103,7 +103,6 @@ public class ReadBox : MonoBehaviour
         return result;
     }
 
-    // Splits expression on + and - (top-level only, respects negatives after operators)
     List<string> SplitOnAddSub(string expr)
     {
         var parts = new List<string>();
@@ -126,7 +125,6 @@ public class ReadBox : MonoBehaviour
         return parts;
     }
 
-    // Evaluates a term containing *, /, %
     float EvaluateMulDiv(string expr)
     {
         expr = expr.Trim();
@@ -166,15 +164,10 @@ public class ReadBox : MonoBehaviour
         return result;
     }
 
-    // Evaluates a boolean condition.
-    // Supports comparison operators: ==, !=, <=, >=, <, >
-    // Also supports bare boolean literals/variables: True, False, or any variable
-    // whose value is non-zero (truthy) / zero (falsy), matching Python semantics.
     bool EvaluateCondition(string condition)
     {
         condition = condition.Trim();
 
-        // Check for comparison operators first (order matters: two-char before one-char)
         string[] ops = new string[] { "==", "!=", "<=", ">=", "<", ">" };
         foreach (string op in ops)
         {
@@ -197,18 +190,14 @@ public class ReadBox : MonoBehaviour
             }
         }
 
-        // No operator found — treat as a bare boolean expression.
-        // "True" -> true, "False" -> false, variable/number -> truthy if non-zero.
         if (condition == "True")  return true;
         if (condition == "False") return false;
 
-        // Could be a variable name or numeric expression used as a truthy value
         float val = EvaluateExpression(condition);
         if (failed) return false;
         return val != 0f;
     }
 
-    // Assigns a value to a variable (creates or updates)
     void SetVariable(string name, float value)
     {
         int index = variableNames.IndexOf(name);
@@ -259,7 +248,6 @@ public class ReadBox : MonoBehaviour
             codeLine.color = Color.white;
     }
 
-    // Executes lines from [startLine, endLine) at the given expected indent level.
     IEnumerator ExecuteBlock(int startLine, int endLine, int expectedIndent)
     {
         int i = startLine;
@@ -268,7 +256,6 @@ public class ReadBox : MonoBehaviour
             string rawLine = textLines[i];
             string line = rawLine.TrimStart();
 
-            // Skip blank lines
             if (string.IsNullOrWhiteSpace(line))
             {
                 i++;
@@ -277,16 +264,8 @@ public class ReadBox : MonoBehaviour
 
             int lineIndent = GetIndent(rawLine);
 
-            // If we've dedented past our expected indent, stop this block
-            if (lineIndent < expectedIndent)
-                break;
-
-            // Skip lines that are deeper than expected (they belong to a sub-block)
-            if (lineIndent > expectedIndent)
-            {
-                i++;
-                continue;
-            }
+            if (lineIndent < expectedIndent) break;
+            if (lineIndent > expectedIndent) { i++; continue; }
 
             HighlightLine(i);
             yield return new WaitForSeconds(0.05f);
@@ -395,7 +374,7 @@ public class ReadBox : MonoBehaviour
             }
 
             // ----------------------------------------------------------------
-            // for loop: for <var> in range(<n>) or range(<start>, <stop>)
+            // for loop
             // ----------------------------------------------------------------
             Match forMatch = Regex.Match(line,
                 @"^for\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+in\s+range\s*\(\s*(.+?)\s*\)\s*:\s*$");
@@ -511,7 +490,7 @@ public class ReadBox : MonoBehaviour
             }
 
             // ----------------------------------------------------------------
-            // Variable assignment: varName = expr  OR compound assignments
+            // Variable assignment
             // ----------------------------------------------------------------
 
             Match varAdd = Regex.Match(line, @"^([a-zA-Z_][a-zA-Z0-9_]*)\s*\+=\s*(.+)$");
@@ -554,7 +533,6 @@ public class ReadBox : MonoBehaviour
                 ClearLine(i); i++; continue;
             }
 
-            // varName = expr  (must come after compound assignments and player.x checks)
             Match setVar = Regex.Match(line, @"^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$");
             if (setVar.Success && setVar.Groups[1].Value != "player")
             {
@@ -579,8 +557,6 @@ public class ReadBox : MonoBehaviour
         }
     }
 
-    // Returns the index of the first line at or after startLine whose indent
-    // is less than bodyIndent (i.e., the line after the block ends).
     int FindBlockEnd(int startLine, int endLine, int bodyIndent)
     {
         for (int j = startLine; j < endLine; j++)
@@ -597,17 +573,36 @@ public class ReadBox : MonoBehaviour
     // Public control methods
     // -----------------------------------------------------------------------
 
-    public void breakAndReset()
+    // Stops the running coroutine and clears line highlights.
+    // Called by Movement when a spike is hit — does NOT move the player yet,
+    // since the death anim still needs to play at the current position.
+    public void StopCode()
     {
         if (codeRunning != null)
+        {
             StopCoroutine(codeRunning);
+            codeRunning = null;
+        }
 
         foreach (var codeLine in codeLines)
             codeLine.color = Color.white;
+    }
 
+    // Resets all interpreter state and snaps the player back to their start position.
+    // Called by Movement after the death animation finishes.
+    public void FullReset()
+    {
         variableNames.Clear();
         variableValues.Clear();
         failed = false;
         playerMovement.gameObject.transform.position = playerMovement.basePos;
+    }
+
+    // Legacy reset used by loop overflow and other in-code errors.
+    // Stops everything and resets position immediately (no death anim).
+    public void breakAndReset()
+    {
+        StopCode();
+        FullReset();
     }
 }

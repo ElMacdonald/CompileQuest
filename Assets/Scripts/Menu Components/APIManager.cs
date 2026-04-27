@@ -69,11 +69,19 @@ public class APIManager : MonoBehaviour
         if (request.result == UnityWebRequest.Result.Success)
         {
             ResponseData response = JsonUtility.FromJson<ResponseData>(request.downloadHandler.text);
-            callback?.Invoke(response.feedback);
+            if (response == null || string.IsNullOrEmpty(response.feedback))
+            {
+                Debug.LogError("[APIManager] Received empty or unparseable response: " + request.downloadHandler.text);
+                callback?.Invoke("Error: No feedback received from server.");
+            }
+            else
+            {
+                callback?.Invoke(response.feedback);
+            }
         }
         else
         {
-            Debug.LogError("API Error: " + request.error);
+            Debug.LogError("[APIManager] Request failed: " + request.error + "\n" + request.downloadHandler.text);
             callback?.Invoke("Error: Could not reach server.");
         }
     }

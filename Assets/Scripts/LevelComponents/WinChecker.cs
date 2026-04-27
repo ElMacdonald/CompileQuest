@@ -12,7 +12,7 @@ public class WinChecker : MonoBehaviour
     public Vector2 respawnPoint;
 
     [Header("Timing")]
-    public float winDelay     = 1f;
+    public float winDelay      = 1f;
     public float checkInterval = 0.2f;
 
     private Coroutine winRoutine;
@@ -27,6 +27,7 @@ public class WinChecker : MonoBehaviour
         if (GameObject.Find("Objective Manager") != null)
             objTracker = GameObject.Find("Objective Manager").GetComponent<ObjectiveTracker>();
 
+        // Snapshot all children once at start — before any are deactivated or destroyed
         collectables = new GameObject[transform.childCount];
         int i = 0;
         foreach (Transform child in transform)
@@ -37,25 +38,22 @@ public class WinChecker : MonoBehaviour
     {
         if (winPanel != null && winPanel.activeSelf) return;
 
-        foreach (Transform child in transform)
+        // If any collectable is still active, no win yet
+        foreach (GameObject c in collectables)
         {
-            if (child.gameObject.activeSelf)
+            if (c != null && c.activeSelf)
             {
                 if (winRoutine != null) { StopCoroutine(winRoutine); winRoutine = null; }
                 return;
             }
         }
 
+        // All collected — check objective tracker if present
         if (winRoutine == null)
         {
-            if (objTracker != null)
-            {
-                if (objTracker.levelWon) winRoutine = StartCoroutine(WinAfterDelay());
-            }
-            else
-            {
+            bool objsPassed = objTracker == null || objTracker.levelWon;
+            if (objsPassed)
                 winRoutine = StartCoroutine(WinAfterDelay());
-            }
         }
     }
 
@@ -65,12 +63,19 @@ public class WinChecker : MonoBehaviour
         while (timer < winDelay)
         {
             timer += Time.deltaTime;
-            foreach (Transform child in transform)
+
+            // If a collectable somehow comes back active, abort
+            foreach (GameObject c in collectables)
             {
-                if (child.gameObject.activeSelf) { winRoutine = null; yield break; }
+                if (c != null && c.activeSelf) { winRoutine = null; yield break; }
             }
+
             yield return null;
         }
+
+        // Award coins once on win
+        if (Session.currentPlayer != null)
+            Session.currentPlayer.coins += 10;
 
         if (winPanel != null) winPanel.SetActive(true);
 
@@ -84,6 +89,7 @@ public class WinChecker : MonoBehaviour
     {
         if (winRoutine != null) { StopCoroutine(winRoutine); winRoutine = null; }
 
+        // Re-enable all collectables using the snapshot taken at Start()
         foreach (GameObject c in collectables)
             if (c != null) c.SetActive(true);
 
