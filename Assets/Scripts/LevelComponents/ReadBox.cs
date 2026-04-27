@@ -22,6 +22,10 @@ public class ReadBox : MonoBehaviour
 
     private const int MAX_LOOP_ITERATIONS = 20;
 
+    [Header("Execution Settings")]
+    [Tooltip("Seconds to wait between each line of code executing. Default is 1.")]
+    public float lineDelay = 1f;
+
     void Start()
     {
         if (GameObject.Find("Objective Manager") != null)
@@ -44,7 +48,6 @@ public class ReadBox : MonoBehaviour
     // Value / Expression Resolution
     // -----------------------------------------------------------------------
 
-    // Returns indentation level (number of leading spaces, tabs count as 4)
     int GetIndent(string line)
     {
         int indent = 0;
@@ -57,7 +60,7 @@ public class ReadBox : MonoBehaviour
         return indent;
     }
 
-    // Resolves a single token (number literal, True/False boolean, or variable name)
+    // Resolves a single token: number literal, True/False boolean, or variable name.
     // True -> 1, False -> 0
     float ResolveToken(string token)
     {
@@ -81,8 +84,7 @@ public class ReadBox : MonoBehaviour
         return 0f;
     }
 
-    // Evaluates a simple arithmetic expression: supports +, -, *, /, %
-    // Handles operator precedence (* / % before + -)
+    // Evaluates an arithmetic expression: supports +, -, *, /, %
     float EvaluateExpression(string expr)
     {
         expr = expr.Trim();
@@ -103,7 +105,6 @@ public class ReadBox : MonoBehaviour
         return result;
     }
 
-    // Splits expression on + and - (top-level only, respects negatives after operators)
     List<string> SplitOnAddSub(string expr)
     {
         var parts = new List<string>();
@@ -126,7 +127,6 @@ public class ReadBox : MonoBehaviour
         return parts;
     }
 
-    // Evaluates a term containing *, /, %
     float EvaluateMulDiv(string expr)
     {
         expr = expr.Trim();
@@ -167,14 +167,17 @@ public class ReadBox : MonoBehaviour
     }
 
     // Evaluates a boolean condition.
-    // Supports comparison operators: ==, !=, <=, >=, <, >
-    // Also supports bare boolean literals/variables: True, False, or any variable
-    // whose value is non-zero (truthy) / zero (falsy), matching Python semantics.
+    // Supports: checkPlatform(), ==, !=, <=, >=, <, >, and bare True/False/truthy values.
     bool EvaluateCondition(string condition)
     {
         condition = condition.Trim();
 
-        // Check for comparison operators first (order matters: two-char before one-char)
+        // checkPlatform() — fires a raycast upward and returns whether a ThroughPlatform is above.
+        // Also arms Movement so the next Jump() call will pass through it.
+        if (condition == "checkPlatform()")
+            return playerMovement.CheckPlatformAbove();
+
+        // Comparison operators — check two-char before one-char to avoid misreads
         string[] ops = new string[] { "==", "!=", "<=", ">=", "<", ">" };
         foreach (string op in ops)
         {
@@ -197,18 +200,14 @@ public class ReadBox : MonoBehaviour
             }
         }
 
-        // No operator found — treat as a bare boolean expression.
-        // "True" -> true, "False" -> false, variable/number -> truthy if non-zero.
         if (condition == "True")  return true;
         if (condition == "False") return false;
 
-        // Could be a variable name or numeric expression used as a truthy value
         float val = EvaluateExpression(condition);
         if (failed) return false;
         return val != 0f;
     }
 
-    // Assigns a value to a variable (creates or updates)
     void SetVariable(string name, float value)
     {
         int index = variableNames.IndexOf(name);
@@ -253,13 +252,15 @@ public class ReadBox : MonoBehaviour
         variableValues.Clear();
         failed = false;
 
+        if (objTracker != null)
+            objTracker.ResetCounters();
+
         yield return StartCoroutine(ExecuteBlock(0, textLines.Count, 0));
 
         foreach (var codeLine in codeLines)
             codeLine.color = Color.white;
     }
 
-    // Executes lines from [startLine, endLine) at the given expected indent level.
     IEnumerator ExecuteBlock(int startLine, int endLine, int expectedIndent)
     {
         int i = startLine;
@@ -268,7 +269,6 @@ public class ReadBox : MonoBehaviour
             string rawLine = textLines[i];
             string line = rawLine.TrimStart();
 
-            // Skip blank lines
             if (string.IsNullOrWhiteSpace(line))
             {
                 i++;
@@ -277,16 +277,8 @@ public class ReadBox : MonoBehaviour
 
             int lineIndent = GetIndent(rawLine);
 
-            // If we've dedented past our expected indent, stop this block
-            if (lineIndent < expectedIndent)
-                break;
-
-            // Skip lines that are deeper than expected (they belong to a sub-block)
-            if (lineIndent > expectedIndent)
-            {
-                i++;
-                continue;
-            }
+            if (lineIndent < expectedIndent) break;
+            if (lineIndent > expectedIndent) { i++; continue; }
 
             HighlightLine(i);
             yield return new WaitForSeconds(0.05f);
@@ -297,6 +289,8 @@ public class ReadBox : MonoBehaviour
             Match ifMatch = Regex.Match(line, @"^if\s+(.+?)\s*:\s*$");
             if (ifMatch.Success)
             {
+                if (objTracker != null) objTracker.usedConditionals += 1;
+
                 string condition = ifMatch.Groups[1].Value;
                 bool condResult = EvaluateCondition(condition);
 
@@ -369,6 +363,8 @@ public class ReadBox : MonoBehaviour
             Match whileMatch = Regex.Match(line, @"^while\s+(.+?)\s*:\s*$");
             if (whileMatch.Success)
             {
+                if (objTracker != null) objTracker.usedLoops += 1;
+
                 string condition = whileMatch.Groups[1].Value;
                 int bodyIndent = expectedIndent + 4;
                 int bodyStart = i + 1;
@@ -395,12 +391,14 @@ public class ReadBox : MonoBehaviour
             }
 
             // ----------------------------------------------------------------
-            // for loop: for <var> in range(<n>) or range(<start>, <stop>)
+            // for loop
             // ----------------------------------------------------------------
             Match forMatch = Regex.Match(line,
                 @"^for\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+in\s+range\s*\(\s*(.+?)\s*\)\s*:\s*$");
             if (forMatch.Success)
             {
+                if (objTracker != null) objTracker.usedLoops += 1;
+
                 string loopVar = forMatch.Groups[1].Value;
                 string rangeArgs = forMatch.Groups[2].Value;
 
@@ -455,116 +453,127 @@ public class ReadBox : MonoBehaviour
             Match addMatch = Regex.Match(line, @"^player\.x\s*\+=\s*(.+)$");
             if (addMatch.Success)
             {
+                if (objTracker != null) objTracker.usedLines += 1;
                 float amount = EvaluateExpression(addMatch.Groups[1].Value);
-                if (!failed) { playerMovement.MoveRight(amount); yield return new WaitForSeconds(1f); }
+                if (!failed) { playerMovement.MoveRight(amount); yield return new WaitForSeconds(lineDelay); }
                 ClearLine(i); i++; continue;
             }
 
             Match subMatch = Regex.Match(line, @"^player\.x\s*-=\s*(.+)$");
             if (subMatch.Success)
             {
+                if (objTracker != null) objTracker.usedLines += 1;
                 float amount = EvaluateExpression(subMatch.Groups[1].Value);
-                if (!failed) { playerMovement.MoveLeft(amount); yield return new WaitForSeconds(1f); }
+                if (!failed) { playerMovement.MoveLeft(amount); yield return new WaitForSeconds(lineDelay); }
                 ClearLine(i); i++; continue;
             }
 
             Match jumpMatch = Regex.Match(line, @"^player\.Jump\s*\(\s*(.+?)\s*\)$");
             if (jumpMatch.Success)
             {
+                if (objTracker != null) objTracker.usedLines += 1;
                 float height = EvaluateExpression(jumpMatch.Groups[1].Value);
-                if (!failed) { playerMovement.Jump(height); yield return new WaitForSeconds(1f); }
+                if (!failed) { playerMovement.Jump(height); yield return new WaitForSeconds(lineDelay); }
                 ClearLine(i); i++; continue;
             }
 
             Match jrMatch = Regex.Match(line, @"^player\.JumpRight\s*\(\s*(.+?),\s*(.+?)\s*\)$");
             if (jrMatch.Success)
             {
+                if (objTracker != null) objTracker.usedLines += 1;
                 float distance = EvaluateExpression(jrMatch.Groups[1].Value);
                 float height   = EvaluateExpression(jrMatch.Groups[2].Value);
-                if (!failed) { playerMovement.JumpRight(distance, height); yield return new WaitForSeconds(1f); }
+                if (!failed) { playerMovement.JumpRight(distance, height); yield return new WaitForSeconds(lineDelay); }
                 ClearLine(i); i++; continue;
             }
 
             Match jlMatch = Regex.Match(line, @"^player\.JumpLeft\s*\(\s*(.+?),\s*(.+?)\s*\)$");
             if (jlMatch.Success)
             {
+                if (objTracker != null) objTracker.usedLines += 1;
                 float distance = EvaluateExpression(jlMatch.Groups[1].Value);
                 float height   = EvaluateExpression(jlMatch.Groups[2].Value);
-                if (!failed) { playerMovement.JumpLeft(distance, height); yield return new WaitForSeconds(1f); }
+                if (!failed) { playerMovement.JumpLeft(distance, height); yield return new WaitForSeconds(lineDelay); }
                 ClearLine(i); i++; continue;
             }
 
             Match setX = Regex.Match(line, @"^player\.x\s*=\s*(.+)$");
             if (setX.Success)
             {
+                if (objTracker != null) objTracker.usedLines += 1;
                 float x = EvaluateExpression(setX.Groups[1].Value);
-                if (!failed) { playerMovement.SetX(x); yield return new WaitForSeconds(1f); }
+                if (!failed) { playerMovement.SetX(x); yield return new WaitForSeconds(lineDelay); }
                 ClearLine(i); i++; continue;
             }
 
             Match setY = Regex.Match(line, @"^player\.y\s*=\s*(.+)$");
             if (setY.Success)
             {
+                if (objTracker != null) objTracker.usedLines += 1;
                 float y = EvaluateExpression(setY.Groups[1].Value);
-                if (!failed) { playerMovement.SetY(y); yield return new WaitForSeconds(1f); }
+                if (!failed) { playerMovement.SetY(y); yield return new WaitForSeconds(lineDelay); }
                 ClearLine(i); i++; continue;
             }
 
             // ----------------------------------------------------------------
-            // Variable assignment: varName = expr  OR compound assignments
+            // Variable assignment
             // ----------------------------------------------------------------
 
             Match varAdd = Regex.Match(line, @"^([a-zA-Z_][a-zA-Z0-9_]*)\s*\+=\s*(.+)$");
             if (varAdd.Success && varAdd.Groups[1].Value != "player")
             {
+                if (objTracker != null) objTracker.usedLines += 1;
                 string varName = varAdd.Groups[1].Value;
                 float current = ResolveToken(varName);
                 float val = EvaluateExpression(varAdd.Groups[2].Value);
-                if (!failed) { SetVariable(varName, current + val); yield return new WaitForSeconds(0.5f); }
+                if (!failed) { SetVariable(varName, current + val); yield return new WaitForSeconds(lineDelay); }
                 ClearLine(i); i++; continue;
             }
 
             Match varSub = Regex.Match(line, @"^([a-zA-Z_][a-zA-Z0-9_]*)\s*-=\s*(.+)$");
             if (varSub.Success && varSub.Groups[1].Value != "player")
             {
+                if (objTracker != null) objTracker.usedLines += 1;
                 string varName = varSub.Groups[1].Value;
                 float current = ResolveToken(varName);
                 float val = EvaluateExpression(varSub.Groups[2].Value);
-                if (!failed) { SetVariable(varName, current - val); yield return new WaitForSeconds(0.5f); }
+                if (!failed) { SetVariable(varName, current - val); yield return new WaitForSeconds(lineDelay); }
                 ClearLine(i); i++; continue;
             }
 
             Match varMul = Regex.Match(line, @"^([a-zA-Z_][a-zA-Z0-9_]*)\s*\*=\s*(.+)$");
             if (varMul.Success)
             {
+                if (objTracker != null) objTracker.usedLines += 1;
                 string varName = varMul.Groups[1].Value;
                 float current = ResolveToken(varName);
                 float val = EvaluateExpression(varMul.Groups[2].Value);
-                if (!failed) { SetVariable(varName, current * val); yield return new WaitForSeconds(0.5f); }
+                if (!failed) { SetVariable(varName, current * val); yield return new WaitForSeconds(lineDelay); }
                 ClearLine(i); i++; continue;
             }
 
             Match varDiv = Regex.Match(line, @"^([a-zA-Z_][a-zA-Z0-9_]*)\s*\/=\s*(.+)$");
             if (varDiv.Success)
             {
+                if (objTracker != null) objTracker.usedLines += 1;
                 string varName = varDiv.Groups[1].Value;
                 float current = ResolveToken(varName);
                 float val = EvaluateExpression(varDiv.Groups[2].Value);
-                if (!failed && val != 0f) { SetVariable(varName, current / val); yield return new WaitForSeconds(0.5f); }
+                if (!failed && val != 0f) { SetVariable(varName, current / val); yield return new WaitForSeconds(lineDelay); }
                 ClearLine(i); i++; continue;
             }
 
-            // varName = expr  (must come after compound assignments and player.x checks)
             Match setVar = Regex.Match(line, @"^([a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.+)$");
             if (setVar.Success && setVar.Groups[1].Value != "player")
             {
+                if (objTracker != null) objTracker.usedLines += 1;
                 string varName = setVar.Groups[1].Value;
                 float varValue = EvaluateExpression(setVar.Groups[2].Value);
                 if (!failed)
                 {
                     SetVariable(varName, varValue);
                     Debug.Log("Set variable " + varName + " to " + varValue);
-                    yield return new WaitForSeconds(0.5f);
+                    yield return new WaitForSeconds(lineDelay);
                 }
                 ClearLine(i); i++; continue;
             }
@@ -574,13 +583,11 @@ public class ReadBox : MonoBehaviour
             // ----------------------------------------------------------------
             ErrorLine(i);
             failed = true;
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSeconds(lineDelay);
             break;
         }
     }
 
-    // Returns the index of the first line at or after startLine whose indent
-    // is less than bodyIndent (i.e., the line after the block ends).
     int FindBlockEnd(int startLine, int endLine, int bodyIndent)
     {
         for (int j = startLine; j < endLine; j++)

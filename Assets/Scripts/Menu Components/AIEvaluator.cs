@@ -17,14 +17,12 @@ using TMPro;
 //   6. On the Submit button:
 //        - Keep: ParsonsFileReading.WriteDropzones  (or TMPToFileWriter.SaveTextToFile)
 //        - Keep: PythonRunner.RunPython             (no-op in WebGL, still runs on desktop)
-//        - REMOVE: TextFileReader.LoadTextFile      (AIEvaluator will call this after the API returns)
 //        - Keep: GameObject.SetActive(true)         (shows the feedback panel)
 //      In WebGL the panel will appear immediately showing "Thinking..."
 //      and the text will update when the API responds.
 //
 // On DESKTOP (Editor / standalone), RunPython still runs as before and
-// TextFileReader.LoadTextFile can remain on the button — this script does
-// nothing in non-WebGL builds.
+// this script does nothing in non-WebGL builds.
 
 public class AIEvaluator : MonoBehaviour
 {
@@ -51,8 +49,7 @@ public class AIEvaluator : MonoBehaviour
     private const string GroqEndpoint = "https://api.groq.com/openai/v1/chat/completions";
     private const string Model = "llama-3.3-70b-versatile";
 
-    // Called by the Submit button (runs after WriteDropzones / SaveTextToFile,
-    // and instead of — or alongside — PythonRunner.RunPython which is a no-op).
+    // Called by the Submit button.
     public void RunEvaluation()
     {
         StartCoroutine(EvaluateCoroutine());
@@ -115,10 +112,9 @@ public class AIEvaluator : MonoBehaviour
             Debug.LogError("[AIEvaluator] " + err + "\n" + req.downloadHandler.text);
         }
 
-        // --- Now load the feedback into the UI ---
-        // This replaces the TextFileReader.LoadTextFile call that was on the button.
+        // --- Display feedback via TextFileReader.DisplayFeedback ---
         if (textFileReader != null)
-            textFileReader.LoadTextFile();
+            textFileReader.DisplayFeedback(AIFeedbackStore.feedback);
         else
             Debug.LogWarning("[AIEvaluator] textFileReader is not assigned. Assign it in the Inspector.");
     }
@@ -177,7 +173,7 @@ public class AIEvaluator : MonoBehaviour
     }
 
     // ---------------------------------------------------------------
-    // Prompts — identical to inputs.py and parsons.py
+    // Prompts
     // ---------------------------------------------------------------
     string BuildCodingPrompt(string playerInput, string sample)
     {
