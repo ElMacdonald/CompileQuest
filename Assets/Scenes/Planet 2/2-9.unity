@@ -5435,6 +5435,7 @@ MonoBehaviour:
   variableNames: []
   variableValues: []
   objTracker: {fileID: 0}
+  lineDelay: 1
 --- !u!1 &1332556259
 GameObject:
   m_ObjectHideFlags: 0
@@ -5673,6 +5674,7 @@ MonoBehaviour:
   floatFrequency: 3
   basePos: {x: 0, y: 0, z: 0}
   canTele: 0
+  readBox: {fileID: 0}
 --- !u!1 &1434432994
 GameObject:
   m_ObjectHideFlags: 0
@@ -8841,6 +8843,10 @@ PrefabInstance:
     - target: {fileID: 4146948292441766944, guid: 2c06093ca08475e4aa5020eb91390df2, type: 3}
       propertyPath: m_Name
       value: Spikes
+      objectReference: {fileID: 0}
+    - target: {fileID: 4146948292441766944, guid: 2c06093ca08475e4aa5020eb91390df2, type: 3}
+      propertyPath: m_TagString
+      value: spike
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

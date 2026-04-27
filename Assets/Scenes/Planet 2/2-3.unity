@@ -1352,7 +1352,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 103f02eba53bc3549aaa650282ec645c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fileNumber: 5
 --- !u!4 &428748496
 Transform:
   m_ObjectHideFlags: 0
@@ -4376,7 +4375,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b8bb7d7ea82af8a48b579f6b29a3df39, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  textSource: {fileID: 825961248}
 --- !u!4 &1096004811
 Transform:
   m_ObjectHideFlags: 0
@@ -5216,7 +5214,7 @@ MonoBehaviour:
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 6
+          m_IntArgument: 19
           m_FloatArgument: 0
           m_StringArgument: 
           m_BoolArgument: 0

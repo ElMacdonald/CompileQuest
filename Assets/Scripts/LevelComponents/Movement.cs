@@ -73,6 +73,8 @@ public class Movement : MonoBehaviour
 
         if (hit.collider != null && hit.collider.tag == "Ground" && moveState == "jumping" && jumpTimer > jumpDelay)
         {
+        if (hit.collider != null && hit.collider.tag == "Ground" && moveState == "jumping" && jumpTimer > jumpDelay)
+        {
             moveState = "idle";
             timer = 1;
         }
@@ -151,8 +153,12 @@ public class Movement : MonoBehaviour
         timer += Time.deltaTime;
         if (timer >= timeBetweenFrames)
         {
+        if (timer >= timeBetweenFrames)
+        {
             timer = 0f;
             currentFrame = (currentFrame + 1) % 4;
+            switch (moveState)
+            {
             switch (moveState)
             {
                 case "left walk":
@@ -171,16 +177,13 @@ public class Movement : MonoBehaviour
         }
     }
 
-    // -----------------------------------------------------------------------
-    // Movement commands
-    // -----------------------------------------------------------------------
-
-    public void MoveLeft(float distance)
-    {
+    public void MoveLeft(float distance){
         moveState = "left walk";
         StartCoroutine(MoveCharacter(Vector3.left, distance));
     }
 
+    public void MoveRight(float distance)
+    {
     public void MoveRight(float distance)
     {
         moveState = "right walk";
@@ -239,12 +242,11 @@ public class Movement : MonoBehaviour
         moveState = "idle";
     }
 
-    public void Jump(float height)
-    {
+    public void Jump(float height){
         jumpTimer = 0f;
         timer = 1f;
-        rb.velocity = new Vector2(rb.velocity.x, 0);
-        rb.AddForce(new Vector2(0, height), ForceMode2D.Impulse);
+        GetComponent<Rigidbody2D>().velocity = new Vector2(GetComponent<Rigidbody2D>().velocity.x, 0);
+        GetComponent<Rigidbody2D>().AddForce(new Vector2(0, height), ForceMode2D.Impulse);
         moveState = "jumping";
     }
 }
