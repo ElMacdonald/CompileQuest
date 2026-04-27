@@ -1175,7 +1175,8 @@ MonoBehaviour:
   respawnPoint: {x: 0, y: 0}
   winDelay: 1
   checkInterval: 0.2
-  collectables: []
+  collectables:
+  - {fileID: 1380035368}
   objTracker: {fileID: 0}
 --- !u!4 &573524750
 Transform:
