@@ -52,8 +52,6 @@ public class Movement : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         readBox = FindObjectOfType<ReadBox>();
         basePos = transform.position;
-
-        // Enforce Z on start in case the object was placed at the wrong depth
         EnforceZ();
     }
 
@@ -63,8 +61,6 @@ public class Movement : MonoBehaviour
 
         jumpTimer += Time.deltaTime;
         handleAnims();
-
-        // Continuously enforce Z — physics or other scripts can drift it
         EnforceZ();
 
         Ray2D ray = new Ray2D(transform.position, Vector2.down);
@@ -73,14 +69,11 @@ public class Movement : MonoBehaviour
 
         if (hit.collider != null && hit.collider.tag == "Ground" && moveState == "jumping" && jumpTimer > jumpDelay)
         {
-        if (hit.collider != null && hit.collider.tag == "Ground" && moveState == "jumping" && jumpTimer > jumpDelay)
-        {
             moveState = "idle";
             timer = 1;
         }
     }
 
-    // Snaps the player's Z to playerZ without touching X or Y
     void EnforceZ()
     {
         Vector3 pos = transform.position;
@@ -153,12 +146,8 @@ public class Movement : MonoBehaviour
         timer += Time.deltaTime;
         if (timer >= timeBetweenFrames)
         {
-        if (timer >= timeBetweenFrames)
-        {
             timer = 0f;
             currentFrame = (currentFrame + 1) % 4;
-            switch (moveState)
-            {
             switch (moveState)
             {
                 case "left walk":
@@ -177,13 +166,16 @@ public class Movement : MonoBehaviour
         }
     }
 
-    public void MoveLeft(float distance){
+    // -----------------------------------------------------------------------
+    // Movement commands
+    // -----------------------------------------------------------------------
+
+    public void MoveLeft(float distance)
+    {
         moveState = "left walk";
         StartCoroutine(MoveCharacter(Vector3.left, distance));
     }
 
-    public void MoveRight(float distance)
-    {
     public void MoveRight(float distance)
     {
         moveState = "right walk";
@@ -233,7 +225,6 @@ public class Movement : MonoBehaviour
         while (moved < distance)
         {
             float step = speed * Time.deltaTime;
-            // Translate only in XY — then pin Z explicitly each frame
             transform.Translate(new Vector3(direction.x * step, direction.y * step, 0f));
             EnforceZ();
             moved += step;
@@ -242,11 +233,12 @@ public class Movement : MonoBehaviour
         moveState = "idle";
     }
 
-    public void Jump(float height){
+    public void Jump(float height)
+    {
         jumpTimer = 0f;
         timer = 1f;
-        GetComponent<Rigidbody2D>().velocity = new Vector2(GetComponent<Rigidbody2D>().velocity.x, 0);
-        GetComponent<Rigidbody2D>().AddForce(new Vector2(0, height), ForceMode2D.Impulse);
+        rb.velocity = new Vector2(rb.velocity.x, 0);
+        rb.AddForce(new Vector2(0, height), ForceMode2D.Impulse);
         moveState = "jumping";
     }
 }
