@@ -1197,6 +1197,7 @@ MonoBehaviour:
   variableNames: []
   variableValues: []
   objTracker: {fileID: 0}
+  lineDelay: 1
 --- !u!114 &364867327
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5046,7 +5047,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 193.55005, y: -160.17084}
+  m_AnchoredPosition: {x: 195.44, y: -83.467}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1044984899
@@ -7434,7 +7435,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -643.95, y: 0}
+  m_AnchoredPosition: {x: -625, y: -0}
   m_SizeDelta: {x: 233.81, y: 233.81}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1773514323
@@ -8351,7 +8352,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -643.95, y: -15.65}
+  m_AnchoredPosition: {x: -628.74, y: -0.00000667572}
   m_SizeDelta: {x: 241.3, y: 233.81}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &115791510060327670
