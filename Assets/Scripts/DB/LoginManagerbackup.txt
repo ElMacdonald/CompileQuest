@@ -1,8 +1,7 @@
 using UnityEngine;
 using TMPro;
 
-// ================================================================
-//  LoginManager.cs  —  REPLACE your existing one
+
 //
 //  Students log in with:
 //    - Their personal Student ID  (unique per student)
@@ -11,7 +10,6 @@ using TMPro;
 //  userId = "JOINCODE_STUDENTID" e.g. "MATH101_john123"
 //  Save follows the student, not the device.
 //  Switching Chromebooks still loads the same save.
-// ================================================================
 
 public class LoginManager : MonoBehaviour
 {

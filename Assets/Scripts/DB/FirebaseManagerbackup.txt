@@ -2,25 +2,12 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Networking;
 
-// ================================================================
-//  FirebaseManager.cs  —  NEW FILE, add to your project
-//
-//  Uses Firestore REST API — no Firebase SDK needed at all.
-//  Project ID is already set to your project below.
-//
-//  SETUP IN UNITY:
-//  1. Create an empty GameObject in your first/menu scene
-//  2. Name it "FirebaseManager"
-//  3. Attach this script to it
-//  4. It will automatically persist across all scenes
-// ================================================================
-
 public class FirebaseManager : MonoBehaviour
 {
     public static FirebaseManager Instance { get; private set; }
 
     [Header("Firebase Project ID")]
-    public string projectId = "seniorprojectgame-ceb56";
+    public string projectId = "";
 
     private string BaseUrl =>
         $"https://firestore.googleapis.com/v1/projects/{projectId}/databases/(default)/documents";
