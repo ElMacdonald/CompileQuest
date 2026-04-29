@@ -1,42 +1,51 @@
-# Python Learning Game Demo
+# Compile Quest
+This project is an educational Unity game that teaches students coding concepts and structure in Python with the use of a built in AI assistant. It is a space themed game that covers individual coding topics using planets, and each planet consists of 15 levels which are fully functional and individually designed. As a player, you will write input code or solve parsons problems to help navigate Cosmo, the game's character, to reach the goal. 
 
-This project is a prototype for an educational game that teaches middle school students the basics of Python programming. The project includes **two main components**:
+## Game Structure
+Each planet covers an individual topic. Currently there are three fully developed planets: 
+- **Declan**, which covers declaring variables and using simple move commands. 
+- **Variablis**, which builds off of declaring variables, and has the player use those to call functions. 
+- **Condinal**, which introduces the player to conditional statements
+- ***More coming soon...***
 
-1. **Parsons Problems**  
-   - A drag-and-drop interface where students reorder lines of Python code to form a correct program.  
-   - Provides instant AI-powered feedback on whether the solution is correct.  
-   - Encourages logical thinking and understanding of Python syntax without enforcing a single coding style.
+Each planet consists of 15 levels, each being unique and having a new problem for the player to solve. The levels had objectives like gems to collect, and certain constraints like a certain amount of lines of code to use. For each level, it will be structured as the following:
 
-2. **Input-Based Exercises**  
-   - A windowed interface where students can write Python code freely in a text box.  
-   - Supports multi-line input, including variable assignments and function definitions.  
-   - Code is executed in a restricted namespace, and the system checks behavior/output rather than the exact syntax.  
-   - AI-powered feedback guides students on what they did correctly, what can be improved, and next steps.  
-   - Students progress through a sequence of exercises, building on previous code.
+- The game frame is on the left, with the interactable section on the right.
+- Below the game frame is where objective will be displayed, complete all of these to win.
+- Below the interactable area on the right is where the player can run their input to see if it is correct, as well as the AI button. 
+- The AI button will send your current input to our server where the AI model will process it and send feedback response. This process usually takes 1-2 seconds or less. 
 
----
+## Level Design
+
+There are two main types of levels, inputs problems and parsons problems.
+#### **Inputs Problems**  
+   - 2D platformer levels with a code box on the right
+   - The player has to help Cosmo navigate through the level by typing lines of code into the box
+
+#### **Parsons Problems**  
+   - Galaga styled levels with blocks instead of text based input
+   - Align the code blocks in the correct order, then use the ship controls to complete the level
+   - The goal is to defeat the enemy ship by programming yours to be strong enough
+
+
 
 ## Features
 
-- **AI-Powered Feedback:** Uses Google’s Gemini 2.0 model to provide short, friendly, and age-appropriate guidance for each exercise.  
-- **Windowed GUI:** Students do not need to interact with the terminal.  
-- **Multiple exercises:** Sequential progression from simple variable assignments to basic function creation.  
-- **Lenient evaluation:** Students can be creative, as long as the code behaves as expected.  
-- **Cumulative context:** Previous exercises carry over, so students can reference earlier code.  
-- **Clean, polished interface:** Large fonts, bordered code input, highlighted buttons, and clear feedback areas.
+- **AI-Powered Feedback:** Uses Groq AI service which utilizes llama 3.3-70b versatile to generate adaptive feedback
+- **Registered and Encrypted Domain:** The game is hosted entirely on a purchased domain, and all data going in and out is encrypted and safe
+- **Session Management:** Between playing, your data will be saved to our database, so you can stop whenever you like and pick up where you left off when you are ready
+- **Remove Server:** We use an AWS EC2 server to host our AI processing so there are no limitations on your machine or website strain and everything communicates over https
+- **Progression:** Each planet starts simple and gets more difficult as you progress to create a learning curve
+- **Lenient evaluation:** Students can be creative, as long as the code behaves as expected
+- **Cumulative context:** Previous exercises carry over, so students can reference earlier code
+- **Clean, polished interface:** Large fonts, bordered code input, highlighted buttons, and clear feedback areas
 
 ---
 
 ## Requirements
 
-- Python 3.10 +  
-   - [Windows](https://www.python.org/downloads/windows)
-   - [MacOS](https://www.python.org/downloads/macos)
-- Internet connection for AI feedback (access to Google Gemini 2.0 API)
-- Run the following commands in a PowerShell terminal with Python installed:
-```bash
-pip install google-genai
+A working internet connection and access to a web browser, then go to:
+#### https://compilequest.org
 
-pip install PyQt5
-```
-*These allow for the AI to function properly, and for the Graphical User Interface (GUI) to work.*
+
+When you launch the game, register by entering a Username and a Password and you can get right into the game. As long as you remember your credentials, your session will be saved. 
