@@ -667,8 +667,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inputField: {fileID: 364867327}
   feedbackUI: {fileID: 1811828412}
-  solutionText: 
+  solutionText: 'damage = 10
+
+    player.SetDamage(damage)
+
+    player.Setup()'
   loadingSpinner: {fileID: 0}
+  isParsons: 1
 --- !u!4 &93446681
 Transform:
   m_ObjectHideFlags: 0
