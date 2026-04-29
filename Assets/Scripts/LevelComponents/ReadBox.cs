@@ -45,9 +45,7 @@ public class ReadBox : MonoBehaviour
         codeRunning = StartCoroutine(PerformActions());
     }
 
-    // -----------------------------------------------------------------------
-    // Value / Expression Resolution
-    // -----------------------------------------------------------------------
+    // Value / expression resolution
 
     int GetIndent(string line)
     {
@@ -61,8 +59,7 @@ public class ReadBox : MonoBehaviour
         return indent;
     }
 
-    // Resolves a single token: number literal, True/False boolean, or variable name.
-    // True -> 1, False -> 0
+    // Resolves a single token: number literal, boolean (True/False), or variable name
     float ResolveToken(string token)
     {
         token = token.Trim();
@@ -85,7 +82,7 @@ public class ReadBox : MonoBehaviour
         return 0f;
     }
 
-    // Evaluates a simple arithmetic expression: supports +, -, *, /, %
+    // Evaluates a simple arithmetic expression (+, -, *, /, %)
     float EvaluateExpression(string expr)
     {
         expr = expr.Trim();
@@ -213,9 +210,7 @@ public class ReadBox : MonoBehaviour
         }
     }
 
-    // -----------------------------------------------------------------------
-    // Line Highlighting Helpers
-    // -----------------------------------------------------------------------
+    // Line highlighting helpers
 
     void HighlightLine(int lineIndex)
     {
@@ -235,9 +230,7 @@ public class ReadBox : MonoBehaviour
             codeLines[lineIndex].color = Color.red;
     }
 
-    // -----------------------------------------------------------------------
-    // Main Interpreter
-    // -----------------------------------------------------------------------
+    // Main interpreter
 
     IEnumerator PerformActions()
     {
@@ -248,8 +241,7 @@ public class ReadBox : MonoBehaviour
         if (objTracker != null)
             objTracker.ResetCounters();
 
-        // Count written lines of code upfront (non-blank lines only),
-        // so loops/repeated execution don't inflate the count.
+        // Count written lines upfront (non-blank only) so loop iterations don't inflate the count
         if (objTracker != null)
         {
             int writtenLines = 0;
@@ -286,9 +278,7 @@ public class ReadBox : MonoBehaviour
             HighlightLine(i);
             yield return new WaitForSeconds(0.05f);
 
-            // ----------------------------------------------------------------
             // if statement
-            // ----------------------------------------------------------------
             Match ifMatch = Regex.Match(line, @"^if\s+(.+?)\s*:\s*$");
             if (ifMatch.Success)
             {
@@ -360,9 +350,7 @@ public class ReadBox : MonoBehaviour
                 continue;
             }
 
-            // ----------------------------------------------------------------
             // while loop
-            // ----------------------------------------------------------------
             Match whileMatch = Regex.Match(line, @"^while\s+(.+?)\s*:\s*$");
             if (whileMatch.Success)
             {
@@ -393,9 +381,7 @@ public class ReadBox : MonoBehaviour
                 continue;
             }
 
-            // ----------------------------------------------------------------
             // for loop
-            // ----------------------------------------------------------------
             Match forMatch = Regex.Match(line,
                 @"^for\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+in\s+range\s*\(\s*(.+?)\s*\)\s*:\s*$");
             if (forMatch.Success)
@@ -449,9 +435,7 @@ public class ReadBox : MonoBehaviour
                 continue;
             }
 
-            // ----------------------------------------------------------------
-            // Player movement commands
-            // ----------------------------------------------------------------
+            // player movement commands
 
             Match addMatch = Regex.Match(line, @"^player\.x\s*\+=\s*(.+)$");
             if (addMatch.Success)
@@ -518,9 +502,7 @@ public class ReadBox : MonoBehaviour
                 ClearLine(i); i++; continue;
             }
 
-            // ----------------------------------------------------------------
-            // Variable assignment
-            // ----------------------------------------------------------------
+            // variable assignment
 
             Match varAdd = Regex.Match(line, @"^([a-zA-Z_][a-zA-Z0-9_]*)\s*\+=\s*(.+)$");
             if (varAdd.Success && varAdd.Groups[1].Value != "player")
@@ -576,9 +558,7 @@ public class ReadBox : MonoBehaviour
                 ClearLine(i); i++; continue;
             }
 
-            // ----------------------------------------------------------------
-            // Unrecognized line
-            // ----------------------------------------------------------------
+            // unrecognized line
             ErrorLine(i);
             failed = true;
             yield return new WaitForSeconds(lineDelay);
@@ -598,13 +578,10 @@ public class ReadBox : MonoBehaviour
         return endLine;
     }
 
-    // -----------------------------------------------------------------------
     // Public control methods
-    // -----------------------------------------------------------------------
 
     // Stops the running coroutine and clears line highlights.
-    // Called by Movement when a spike is hit — does NOT move the player yet,
-    // since the death anim still needs to play at the current position.
+    // Called by Movement on spike hit — does not move the player since the death anim plays first.
     public void StopCode()
     {
         if (codeRunning != null)
@@ -617,7 +594,7 @@ public class ReadBox : MonoBehaviour
             codeLine.color = Color.white;
     }
 
-    // Resets all interpreter state and snaps the player back to their start position.
+    // Resets interpreter state and snaps the player back to their start position.
     // Called by Movement after the death animation finishes.
     public void FullReset()
     {
@@ -627,8 +604,7 @@ public class ReadBox : MonoBehaviour
         playerMovement.gameObject.transform.position = playerMovement.basePos;
     }
 
-    // Legacy reset used by loop overflow and other in-code errors.
-    // Stops everything and resets position immediately (no death anim).
+    // Used by loop overflow and other in-code errors. Stops everything and resets position immediately.
     public void breakAndReset()
     {
         StopCode();

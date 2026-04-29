@@ -4,8 +4,7 @@ using System.Diagnostics;
 using System.IO;
 #endif
 
-// NOTE: Process.Start is not supported in WebGL.
-// This script is fully disabled at compile time for WebGL builds.
+// Process.Start is not supported in WebGL, so this whole script is compiled out for those builds.
 public class RunPythonFile : MonoBehaviour
 {
 #if !UNITY_WEBGL
@@ -51,7 +50,7 @@ public class RunPythonFile : MonoBehaviour
         }
     }
 #else
-    // WebGL stub — this component does nothing in the browser build.
+    // WebGL stub
     [Header("Path to your Python file (unused in WebGL)")]
     public string pythonFilePath = "";
     void Start() =>

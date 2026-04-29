@@ -84,9 +84,7 @@ public class Movement : MonoBehaviour
         }
     }
 
-    // -----------------------------------------------------------------------
     // Spike handling
-    // -----------------------------------------------------------------------
 
     void OnTriggerEnter2D(Collider2D other)
     {
@@ -137,9 +135,7 @@ public class Movement : MonoBehaviour
             readBox.FullReset();
     }
 
-    // -----------------------------------------------------------------------
     // Animation
-    // -----------------------------------------------------------------------
 
     public void handleAnims()
     {
@@ -166,9 +162,7 @@ public class Movement : MonoBehaviour
         }
     }
 
-    // -----------------------------------------------------------------------
     // Movement commands
-    // -----------------------------------------------------------------------
 
     public void MoveLeft(float distance)
     {

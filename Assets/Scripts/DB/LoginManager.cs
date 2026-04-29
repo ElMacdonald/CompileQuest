@@ -1,8 +1,7 @@
 using UnityEngine;
 using TMPro;
 
-// Login uses joinCode + studentId as the Firestore document key.
-// e.g. userId = "MATH101_john123"
+// Login uses joinCode + studentId as the Firestore document key (e.g. "MATH101_john123")
 
 public class LoginManager : MonoBehaviour
 {
@@ -67,7 +66,7 @@ public class LoginManager : MonoBehaviour
         {
             if (loadedData != null)
             {
-                // Existing player — restore their save.
+                // Existing player — restore save
                 Session.currentPlayer = loadedData;
 #if UNITY_EDITOR
                 Debug.Log("[Login] Loaded existing save for: " + userId);
@@ -75,7 +74,7 @@ public class LoginManager : MonoBehaviour
             }
             else
             {
-                // Genuinely new player — create and save a fresh record.
+                // New player — create a fresh record
                 Session.currentPlayer = new PlayerData
                 {
                     userId        = userId,
@@ -152,8 +151,7 @@ public class LoginManager : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    // Syncs completed levels from Firebase into PlayerPrefs, then tells all
-    // level select UI to redraw called right after Session.currentPlayer is set.
+    // Syncs completed levels from Firebase into PlayerPrefs, then refreshes all level select UI.
     void SyncProgressAndRefreshUI()
     {
         if (Session.currentPlayer == null) return;

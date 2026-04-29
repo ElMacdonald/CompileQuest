@@ -18,7 +18,7 @@ public class APIManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // optional but recommended
+            DontDestroyOnLoad(gameObject);
         }
         else
         {

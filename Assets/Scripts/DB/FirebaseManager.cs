@@ -26,7 +26,7 @@ public class FirebaseManager : MonoBehaviour
     {
         if (Instance != null && Instance != this)
         {
-            // Copy the inspector-set projectId to the live instance before bowing out,
+            // Copy the inspector projectId to the live instance before destroying this duplicate
             if (!string.IsNullOrEmpty(projectId))
                 Instance.projectId = projectId;
             Destroy(this);
@@ -115,7 +115,7 @@ public class FirebaseManager : MonoBehaviour
         }
     }
 
-    // Wraps PlayerData as a single stringValue field for Firestore
+    // Wraps PlayerData as a stringValue field for Firestore
     string BuildFirestoreDocument(PlayerData data)
     {
         string inner   = JsonUtility.ToJson(data);
@@ -127,8 +127,8 @@ public class FirebaseManager : MonoBehaviour
     {
         try
         {
-            // Firestore REST API may format as "stringValue":" or "stringValue": "
-            // so search for just the field name and then skip to the opening quote.
+            // Firestore REST can format "stringValue" with or without a space before the colon,
+            // so just search for the field name and skip ahead to the opening quote.
             const string key = "\"stringValue\"";
             int start = firestoreJson.IndexOf(key);
             if (start < 0) return null;
@@ -136,14 +136,14 @@ public class FirebaseManager : MonoBehaviour
             // Skip whitespace and colon, then land on the opening quote
             while (start < firestoreJson.Length && firestoreJson[start] != '"') start++;
             if (start >= firestoreJson.Length) return null;
-            start++; // step past the opening quote
+            start++; // skip past the opening quote
 
-            // Walk forward to find the closing quote, skipping over escaped quotes (\")
+            // Walk forward to the closing quote, skipping escaped chars
             int end = start;
             while (end < firestoreJson.Length)
             {
-                if (firestoreJson[end] == '\\') { end += 2; continue; } // skip escaped char
-                if (firestoreJson[end] == '"')  { break; }              // real closing quote
+                if (firestoreJson[end] == '\\') { end += 2; continue; } // escaped char
+                if (firestoreJson[end] == '"')  { break; }              // closing quote
                 end++;
             }
             if (end >= firestoreJson.Length) return null;
