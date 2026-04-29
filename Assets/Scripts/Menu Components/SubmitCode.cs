@@ -12,6 +12,9 @@ public class SubmitCode : MonoBehaviour
 
     public GameObject loadingSpinner;
 
+    [Header("Parsons Mode")]
+    public bool isParsons = false;
+
     public void Submit()
     {
         if (APIManager.Instance == null)
@@ -20,7 +23,24 @@ public class SubmitCode : MonoBehaviour
             return;
         }
 
-        string playerCode = inputField.text;
+        string playerCode;
+
+        if (isParsons)
+        {
+            ParsonsFileReading pfr = FindObjectOfType<ParsonsFileReading>();
+            if (pfr == null)
+            {
+                Debug.LogError("[SubmitCode] isParsons is true but no ParsonsFileReading found in scene!");
+                return;
+            }
+
+            pfr.WriteDropzones();
+            playerCode = string.Join("\n", PythonInputStore.lines);
+        }
+        else
+        {
+            playerCode = inputField.text;
+        }
 
         if (loadingSpinner != null)
             loadingSpinner.SetActive(true);

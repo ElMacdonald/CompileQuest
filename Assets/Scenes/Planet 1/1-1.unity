@@ -667,8 +667,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inputField: {fileID: 364867327}
   feedbackUI: {fileID: 1811828412}
-  solutionText: 
+  solutionText: 'damage = 10
+
+    player.SetDamage(damage)
+
+    player.Setup()'
   loadingSpinner: {fileID: 0}
+  isParsons: 1
 --- !u!4 &93446681
 Transform:
   m_ObjectHideFlags: 0
@@ -5047,8 +5052,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 195.44, y: -83.467}
-  m_SizeDelta: {x: 160, y: 30}
+  m_AnchoredPosition: {x: 194.10704, y: -85.98463}
+  m_SizeDelta: {x: 117.3479, y: 60.5672}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1044984899
 MonoBehaviour:
@@ -5126,8 +5131,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
-  m_Type: 1
+  m_Sprite: {fileID: 21300000, guid: 7eaf5ba8ad1a9224cac8dc2c5df947e9, type: 3}
+  m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
@@ -6962,7 +6967,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1592308845}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 

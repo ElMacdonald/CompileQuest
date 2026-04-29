@@ -67,7 +67,7 @@ public class Movement : MonoBehaviour
         RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction, 2f);
         Debug.DrawRay(ray.origin, ray.direction * 1.5f, Color.red);
 
-        if (hit.collider != null && hit.collider.tag == "Ground" && moveState == "jumping" && jumpTimer > jumpDelay)
+        if (hit.collider != null && (hit.collider.tag == "Ground" || hit.collider.tag == "JumpThrough") && moveState == "jumping" && jumpTimer > jumpDelay)
         {
             moveState = "idle";
             timer = 1;
@@ -84,9 +84,7 @@ public class Movement : MonoBehaviour
         }
     }
 
-    // -----------------------------------------------------------------------
     // Spike handling
-    // -----------------------------------------------------------------------
 
     void OnTriggerEnter2D(Collider2D other)
     {
@@ -137,9 +135,7 @@ public class Movement : MonoBehaviour
             readBox.FullReset();
     }
 
-    // -----------------------------------------------------------------------
     // Animation
-    // -----------------------------------------------------------------------
 
     public void handleAnims()
     {
@@ -166,9 +162,7 @@ public class Movement : MonoBehaviour
         }
     }
 
-    // -----------------------------------------------------------------------
     // Movement commands
-    // -----------------------------------------------------------------------
 
     public void MoveLeft(float distance)
     {
@@ -231,6 +225,34 @@ public class Movement : MonoBehaviour
             yield return null;
         }
         moveState = "idle";
+    }
+
+    public void JumpDown()
+    {
+        StartCoroutine(DropThrough());
+    }
+
+    private IEnumerator DropThrough()
+    {
+        Collider2D playerCol = GetComponent<Collider2D>();
+        GameObject[] platforms = GameObject.FindGameObjectsWithTag("JumpThrough");
+        List<Collider2D> platformCols = new List<Collider2D>();
+
+        foreach (GameObject p in platforms)
+        {
+            Collider2D col = p.GetComponent<Collider2D>();
+            if (col != null)
+            {
+                Physics2D.IgnoreCollision(playerCol, col, true);
+                platformCols.Add(col);
+            }
+        }
+
+        yield return new WaitForSeconds(1.05f);
+
+        foreach (Collider2D col in platformCols)
+            if (col != null)
+                Physics2D.IgnoreCollision(playerCol, col, false);
     }
 
     public void Jump(float height)

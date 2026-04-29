@@ -98,4 +98,16 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Planet 2/2-15.unity
     guid: 79449b999332e1643ad28f5f770e2846
+  - enabled: 1
+    path: Assets/Scenes/Planet 3/3-1.unity
+    guid: 124855a65b239ae48b9fc24ebad0763e
+  - enabled: 1
+    path: Assets/Scenes/Planet 3/3-2.unity
+    guid: d25c3219ec842e94883cd7393a725c1a
+  - enabled: 1
+    path: Assets/Scenes/Planet 3/3-3.unity
+    guid: 466f61e848757724abf3fa712535809e
+  - enabled: 1
+    path: Assets/Scenes/Planet 3/3-4.unity
+    guid: bffc76758502df04eb7e0f5e02fe922a
   m_configObjects: {}

@@ -17,7 +17,8 @@ public class LevelSelectUI : MonoBehaviour
     [Tooltip("0-based index of the first level in this panel. Planet 1 = 0, Planet 2 = 15, Planet 3 = 30.")]
     public int firstLevelIndex = 0;
 
-    private void OnEnable() { RefreshAllButtons(); }
+    // OnEnable intentionally removed — refresh is driven by LevelManager.OnSceneLoaded
+    // and PlanetCarouselUI.EnterPlanet after Firebase sync completes, preventing stale reads.
 
     public void RefreshAllButtons()
     {
@@ -28,7 +29,12 @@ public class LevelSelectUI : MonoBehaviour
 
         for (int i = 0; i < levelObjects.Count; i++)
         {
-            int   levelIndex  = firstLevelIndex + i;
+            // Prefer reading the absolute index directly from the button name (e.g. "2-3")
+            // so the offset is never wrong regardless of panel order or firstLevelIndex.
+            int levelIndex = AbsoluteIndexFromName(levelObjects[i].name);
+            if (levelIndex < 0)
+                levelIndex = firstLevelIndex + i; // fallback for unnamed buttons
+
             bool  isCompleted = LevelManager.Instance.IsLevelCompleted(levelIndex);
             bool  isLocked    = useLevelLocking && levelIndex > 0
                                 && !LevelManager.Instance.IsLevelCompleted(levelIndex - 1);
@@ -54,6 +60,17 @@ public class LevelSelectUI : MonoBehaviour
         }
     }
 
+    // Returns the absolute 0-based index from a name like "2-3" -> 17, or -1 if not parseable.
+    private int AbsoluteIndexFromName(string name)
+    {
+        var parts = name.Split('-');
+        if (parts.Length == 2
+            && int.TryParse(parts[0], out int planet)
+            && int.TryParse(parts[1], out int level))
+            return (planet - 1) * 15 + (level - 1);
+        return -1;
+    }
+
     private List<GameObject> FindLevelObjects()
     {
         var result = new List<GameObject>();
@@ -75,10 +92,8 @@ public class LevelSelectUI : MonoBehaviour
 
             if (IsLevelName(child.name))
                 result.Add(child.gameObject);
-            else if (child.GetComponent<Button>() != null)
-                result.Add(child.gameObject);
             else
-                CollectLevelChildren(child, result);
+                CollectLevelChildren(child, result); // recurse into non-level containers
         }
     }
 
@@ -92,7 +107,10 @@ public class LevelSelectUI : MonoBehaviour
     private int ParseLevelNumber(string name)
     {
         var parts = name.Split('-');
-        if (parts.Length == 2 && int.TryParse(parts[1], out int n)) return n;
+        if (parts.Length == 2
+            && int.TryParse(parts[0], out int planet)
+            && int.TryParse(parts[1], out int level))
+            return (planet - 1) * 15 + (level - 1);
         return 0;
     }
 }

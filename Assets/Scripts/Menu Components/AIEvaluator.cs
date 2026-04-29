@@ -3,26 +3,10 @@ using UnityEngine;
 using UnityEngine.Networking;
 using TMPro;
 
-// WebGL-safe AI evaluator.
-// Replaces the Python scripts (inputs.py / parsons.py) by calling the Groq API
-// directly over HTTP — no file I/O, no Process.Start, works in browser builds.
-//
-// HOW TO USE IN THE INSPECTOR:
-//   1. Add this component to the PYTHON RUNNER GameObject (alongside PythonRunner).
-//   2. Set your Groq API key in the groqApiKey field.
-//   3. In the sampleSolution field, paste this level's full sample solution text
-//      (include "Problem: ..." on the first line if it's a coding level).
-//   4. Check isParsons if this is a drag-and-drop Parsons level.
-//   5. Assign the scene's TextFileReader component to the textFileReader field.
-//   6. On the Submit button:
-//        - Keep: ParsonsFileReading.WriteDropzones  (or TMPToFileWriter.SaveTextToFile)
-//        - Keep: PythonRunner.RunPython             (no-op in WebGL, still runs on desktop)
-//        - Keep: GameObject.SetActive(true)         (shows the feedback panel)
-//      In WebGL the panel will appear immediately showing "Thinking..."
-//      and the text will update when the API responds.
-//
-// On DESKTOP (Editor / standalone), RunPython still runs as before and
-// this script does nothing in non-WebGL builds.
+// Calls Groq API directly over HTTP for WebGL builds.
+// No file I/O or Process.Start — attach alongside PythonRunner on the PYTHON RUNNER object.
+// Set groqApiKey, paste the level's solution into sampleSolution, check isParsons if needed,
+// and assign the scene's TextFileReader. Desktop builds still use RunPython; this is a no-op there.
 
 public class AIEvaluator : MonoBehaviour
 {
@@ -49,7 +33,7 @@ public class AIEvaluator : MonoBehaviour
     private const string GroqEndpoint = "https://api.groq.com/openai/v1/chat/completions";
     private const string Model = "llama-3.3-70b-versatile";
 
-    // Called by the Submit button.
+    // Hooked to the Submit button.
     public void RunEvaluation()
     {
         StartCoroutine(EvaluateCoroutine());
@@ -63,7 +47,7 @@ public class AIEvaluator : MonoBehaviour
             yield break;
         }
 
-        // --- Build player input string ---
+        // Build player input string
         string playerInput;
         if (isParsons)
         {
@@ -87,7 +71,7 @@ public class AIEvaluator : MonoBehaviour
 
         if (statusText != null) statusText.text = "Thinking...";
 
-        // --- Send HTTP request to Groq ---
+        // Send HTTP request to Groq
         using UnityWebRequest req = new UnityWebRequest(GroqEndpoint, "POST");
         byte[] bodyBytes = System.Text.Encoding.UTF8.GetBytes(requestBody);
         req.uploadHandler   = new UploadHandlerRaw(bodyBytes);
@@ -112,16 +96,14 @@ public class AIEvaluator : MonoBehaviour
             Debug.LogError("[AIEvaluator] " + err + "\n" + req.downloadHandler.text);
         }
 
-        // --- Display feedback via TextFileReader.DisplayFeedback ---
+        // Show feedback in the UI
         if (textFileReader != null)
             textFileReader.DisplayFeedback(AIFeedbackStore.feedback);
         else
             Debug.LogWarning("[AIEvaluator] textFileReader is not assigned. Assign it in the Inspector.");
     }
 
-    // ---------------------------------------------------------------
-    // JSON request body for Groq's OpenAI-compatible endpoint
-    // ---------------------------------------------------------------
+    // Builds the JSON body for Groq's OpenAI-compatible endpoint
     string BuildGroqRequestBody(string userPrompt)
     {
         string systemEscaped = EscapeJson("You are a middle school Python teacher.");
@@ -134,10 +116,7 @@ public class AIEvaluator : MonoBehaviour
                "]}";
     }
 
-    // ---------------------------------------------------------------
-    // Parse the "content" field from Groq's JSON response
-    // {"choices":[{"message":{"content":"..."}}]}
-    // ---------------------------------------------------------------
+    // Pulls the content field out of Groq's response JSON
     string ParseGroqResponse(string json)
     {
         const string key = "\"content\"";
@@ -172,9 +151,6 @@ public class AIEvaluator : MonoBehaviour
         return sb.ToString().Trim();
     }
 
-    // ---------------------------------------------------------------
-    // Prompts
-    // ---------------------------------------------------------------
     string BuildCodingPrompt(string playerInput, string sample)
     {
         return
@@ -237,10 +213,7 @@ public class AIEvaluator : MonoBehaviour
     }
 
 #else
-    // ---------------------------------------------------------------
-    // Desktop / Editor stub — this component does nothing outside WebGL.
-    // RunPython.cs already handles the desktop flow.
-    // ---------------------------------------------------------------
+    // Desktop/Editor stub — RunPython handles things outside WebGL.
     public string groqApiKey = "";
     [TextArea(4, 14)] public string sampleSolution = "";
     public bool isParsons = false;

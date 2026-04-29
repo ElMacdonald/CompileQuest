@@ -2,15 +2,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
-// WebGL-safe: replaced File I/O with in-memory PythonInputStore.
-// Application.dataPath is a server URL in WebGL and cannot be written to.
+// WebGL-safe: uses PythonInputStore instead of file I/O.
+// Application.dataPath is a server URL in WebGL.
 public class ParsonsFileReading : MonoBehaviour
 {
     public GameObject[] dropZones;
 
-    // -----------------------------
-    // WRITE DROPZONE TEXT TO STORE
-    // -----------------------------
+    // Reads each drop zone's text and writes it to PythonInputStore
     public void WriteDropzones()
     {
         List<string> lines = new List<string>();
@@ -25,9 +23,7 @@ public class ParsonsFileReading : MonoBehaviour
         Debug.Log("[ParsonsFileReading] Wrote " + lines.Count + " lines to PythonInputStore.");
     }
 
-    // -----------------------------
-    // READ STORE INTO DROPZONES
-    // -----------------------------
+    // Reads PythonInputStore back into drop zones
     public void ReadDropzones()
     {
         string[] lines = PythonInputStore.lines;

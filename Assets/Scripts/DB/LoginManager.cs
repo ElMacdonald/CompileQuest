@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 
+>>>>>>> f73c97a7d563d226ac61a0e68f5fba5072e7c855
 public class LoginManager : MonoBehaviour
 {
     public static LoginManager Instance { get; private set; }
@@ -191,6 +192,7 @@ public class LoginManager : MonoBehaviour
         PlayerPrefs.Save();
     }
 
+>>>>>>> f73c97a7d563d226ac61a0e68f5fba5072e7c855
     void SetStatus(string msg)
     {
         if (statusText != null) statusText.text = msg;

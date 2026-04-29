@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // Editor-only. Attach to any title screen GameObject.
-// Press P in Play Mode to wipe the DEV_devuser's progress in Firebase and PlayerPrefs.
+// Press P in Play Mode to wipe the DEV_devuser's Firebase and PlayerPrefs progress.
 
 public class DevTools : MonoBehaviour
 {

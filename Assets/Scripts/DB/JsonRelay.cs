@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// Stub for handling server responses. Wire up SaveToFirebase() when the server is ready.
+// Stub for handling server responses.
 
 public class JsonRelay : MonoBehaviour
 {

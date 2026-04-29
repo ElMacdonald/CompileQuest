@@ -2,20 +2,23 @@ using UnityEngine;
 using UnityEngine.Networking;
 using System.Text;
 using System.Collections;
+using System.Net.Cache;
 
 public class APIManager : MonoBehaviour
 {
     public static APIManager Instance;
 
     private string inputsURL = "https://api.compilequest.org/inputs";
+    //private string inputsURL = "http://18.118.196.161/inputs";
     private string parsonsURL = "https://api.compilequest.org/parsons";
+    //private string parsonsURL = "http://18.118.196.161/parsons";
 
     private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject); // optional but recommended
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -64,7 +67,15 @@ public class APIManager : MonoBehaviour
 
         request.SetRequestHeader("Content-Type", "application/json");
 
+        Debug.Log("[APIManager] Sending POST to: " + url);
+        Debug.Log("[APIManager] JSON body: " + json);
+
         yield return request.SendWebRequest();
+        
+        Debug.Log("[APIManager] Response code: " + request.responseCode);
+        Debug.Log("[APIManager] Response text: " + request.downloadHandler.text);
+        Debug.Log("[APIManager] Request result: " + request.result);
+        Debug.Log("[APIManager] Error: " + request.error);
 
         if (request.result == UnityWebRequest.Result.Success)
         {

@@ -1,6 +1,6 @@
-// Shared in-memory store for player Python input.
-// Replaces file I/O (Application.dataPath writes) so the game works in WebGL.
-// ParsonsFileReading.cs and WriteToFile.cs both read/write here.
+// Shared in-memory store for player code input.
+// Used instead of writing to Application.dataPath, which breaks in WebGL.
+// ParsonsFileReading and WriteToFile both read/write here.
 public static class PythonInputStore
 {
     public static string[] lines = new string[0];
