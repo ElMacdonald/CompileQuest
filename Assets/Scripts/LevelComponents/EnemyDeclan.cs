@@ -14,6 +14,7 @@ public class EnemyDeclan : MonoBehaviour
         {
             winPanel.SetActive(true);
             Destroy(other.gameObject);
+SoundManager.Play("Victory");
 
             if (Session.currentPlayer != null)
                 Session.currentPlayer.coins += 10;

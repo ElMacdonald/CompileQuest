@@ -103,7 +103,7 @@ public class Movement : MonoBehaviour
     IEnumerator DeathSequence()
     {
         isDead = true;
-
+        SoundManager.Play("Death");
         if (readBox != null)
             readBox.StopCode();
         else

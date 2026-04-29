@@ -1,31 +1,43 @@
 using UnityEngine;
 using TMPro;
 
-// Login uses joinCode + studentId as the Firestore document key.
-// e.g. userId = "MATH101_john123"
-
 public class LoginManager : MonoBehaviour
 {
+    public static LoginManager Instance { get; private set; }
+
     [Header("UI References")]
     public GameObject      loginPanel;
     public TMP_InputField  studentIdInput;
     public TMP_InputField  joinCodeInput;
-    public TMP_InputField  displayNameInput;
     public TextMeshProUGUI statusText;
 
-    private const float SESSION_DURATION = 28800f; // 8 hours
+    [Header("Panels")]
+    public GameObject levelSelectPanel;  // your main level select UI root
+    public GameObject teacherDashboard;  // teacher dashboard panel
+
+    private const float SESSION_DURATION = 28800f;
+
+    void Awake()
+    {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+    }
 
     void Start()
     {
-        if (PlayerPrefs.HasKey("sessionUserId") && PlayerPrefs.HasKey("sessionTimeEpoch"))
-        {
-            string savedUserId = PlayerPrefs.GetString("sessionUserId", "");
-            long savedEpoch    = long.Parse(PlayerPrefs.GetString("sessionTimeEpoch", "0"));
-            long elapsed       = System.DateTimeOffset.UtcNow.ToUnixTimeSeconds() - savedEpoch;
+        if (Session.currentPlayer != null) return;
 
-            if (elapsed < (long)SESSION_DURATION)
+        if (PlayerPrefs.HasKey("sessionUserId"))
+        {
+            float savedTime = PlayerPrefs.GetFloat("sessionTime", 0f);
+            float elapsed   = Time.realtimeSinceStartup - savedTime;
+
+            if (elapsed < SESSION_DURATION)
             {
-                AutoLogin(savedUserId, PlayerPrefs.GetString("sessionCode", ""));
+                string savedUserId   = PlayerPrefs.GetString("sessionUserId");
+                string savedCode     = PlayerPrefs.GetString("sessionCode", "");
+                bool   savedTeacher  = PlayerPrefs.GetInt("sessionIsTeacher", 0) == 1;
+                AutoLogin(savedUserId, savedCode, savedTeacher);
                 return;
             }
             else
@@ -37,109 +49,136 @@ public class LoginManager : MonoBehaviour
         loginPanel.SetActive(true);
     }
 
-    // Strips non-alphanumeric characters to prevent malformed Firestore paths
-    private static string SanitiseId(string raw)
-    {
-        if (string.IsNullOrEmpty(raw)) return raw;
-        var sb = new System.Text.StringBuilder(raw.Length);
-        foreach (char c in raw)
-            if (char.IsLetterOrDigit(c) || c == '_')
-                sb.Append(c);
-        return sb.ToString();
-    }
-
     public void OnLoginButtonPressed()
     {
-        string studentId = SanitiseId(studentIdInput.text.Trim());
-        string joinCode  = SanitiseId(joinCodeInput.text.Trim().ToUpper());
-        string name      = studentId;
+        string userId   = studentIdInput.text.Trim();
+        string joinCode = joinCodeInput.text.Trim().ToUpper();
 
-        if (string.IsNullOrEmpty(studentId)) { SetStatus("Please enter your student ID."); return; }
-        if (string.IsNullOrEmpty(joinCode))  { SetStatus("Please enter your classroom join code."); return; }
+        if (string.IsNullOrEmpty(userId))   { SetStatus("Please enter your ID.");        return; }
+        if (string.IsNullOrEmpty(joinCode)) { SetStatus("Please enter your join code."); return; }
+
+        bool isTeacher = userId.ToUpper().Contains("TCHR");
 
         SetStatus("Loading...");
 
-        string userId = joinCode + "_" + studentId;
-        Session.userId        = userId;
-        Session.classroomCode = joinCode;
-
-        FirebaseManager.Instance.Load(userId, (loadedData) =>
+        if (isTeacher)
         {
-            if (loadedData != null)
+            // Teacher — no Firebase lookup needed, just validate and show dashboard
+            Session.userId        = userId;
+            Session.classroomCode = joinCode;
+            Session.currentPlayer = new PlayerData
             {
-                // Existing player — restore their save.
-                Session.currentPlayer = loadedData;
-#if UNITY_EDITOR
-                Debug.Log("[Login] Loaded existing save for: " + userId);
-#endif
-            }
-            else
-            {
-                // Genuinely new player — create and save a fresh record.
-                Session.currentPlayer = new PlayerData
-                {
-                    userId        = userId,
-                    displayName   = name,
-                    classroomCode = joinCode
-                };
-                FirebaseManager.Instance.Save(userId, Session.currentPlayer,
-#if UNITY_EDITOR
-                    onSuccess: () => Debug.Log("[Login] New save created for: " + userId));
-#else
-                    onSuccess: null);
-#endif
-            }
-
+                userId        = userId,
+                displayName   = userId,
+                classroomCode = joinCode
+            };
             Session.StartSession();
-            SaveSessionCookie(userId, joinCode);
-            SyncProgressAndRefreshUI();
+            SaveSessionCookie(userId, joinCode, true);
             loginPanel.SetActive(false);
             SetStatus("");
-        },
-        (error) =>
+            ShowTeacherDashboard(joinCode);
+        }
+        else
         {
+            // Student — load from Firebase
+            string fullId = joinCode + "_" + userId;
+            Session.userId        = fullId;
+            Session.classroomCode = joinCode;
 
-#if UNITY_EDITOR
-            Debug.LogWarning("[Login] Firebase load failed: " + error);
-#endif
-            SetStatus("Could not reach server. Check your connection and try again.");
-        });
+            FirebaseManager.Instance.Load(fullId, (loadedData) =>
+            {
+                if (loadedData != null)
+                {
+                    Session.currentPlayer = loadedData;
+                    Debug.Log("[Login] Loaded save for: " + fullId);
+                }
+                else
+                {
+                    Session.currentPlayer = new PlayerData
+                    {
+                        userId        = fullId,
+                        displayName   = userId,
+                        classroomCode = joinCode
+                    };
+                    FirebaseManager.Instance.Save(fullId, Session.currentPlayer);
+                    Debug.Log("[Login] New save created for: " + fullId);
+                }
+
+                Session.StartSession();
+                SaveSessionCookie(fullId, joinCode, false);
+                loginPanel.SetActive(false);
+                SetStatus("");
+            },
+            (error) =>
+            {
+                Debug.LogWarning("[Login] Firebase unavailable: " + error);
+                Session.currentPlayer = new PlayerData
+                {
+                    userId        = fullId,
+                    displayName   = userId,
+                    classroomCode = joinCode
+                };
+                Session.StartSession();
+                loginPanel.SetActive(false);
+                SetStatus("(Offline mode)");
+            });
+        }
     }
 
-    void AutoLogin(string userId, string code)
+    void AutoLogin(string userId, string code, bool isTeacher)
     {
         Session.userId        = userId;
         Session.classroomCode = code;
         SetStatus("Loading...");
 
+        if (isTeacher)
+        {
+            Session.currentPlayer = new PlayerData { userId = userId, classroomCode = code };
+            Session.StartSession();
+            loginPanel.SetActive(false);
+            SetStatus("");
+            ShowTeacherDashboard(code);
+            return;
+        }
+
         FirebaseManager.Instance.Load(userId, (loadedData) =>
         {
             Session.currentPlayer = loadedData ?? new PlayerData { userId = userId, classroomCode = code };
             Session.StartSession();
-            SyncProgressAndRefreshUI();
             loginPanel.SetActive(false);
             SetStatus("");
-#if UNITY_EDITOR
             Debug.Log("[Login] Auto-login OK: " + userId);
-#endif
         },
         (error) =>
         {
-
-#if UNITY_EDITOR
-            Debug.LogWarning("[Login] Auto-login Firebase load failed: " + error);
-#endif
-            ClearSession();
-            loginPanel.SetActive(true);
-            SetStatus("Could not reach server. Check your connection and try again.");
+            Session.currentPlayer = new PlayerData { userId = userId, classroomCode = code };
+            Session.StartSession();
+            loginPanel.SetActive(false);
+            SetStatus("(Offline mode)");
         });
     }
 
-    void SaveSessionCookie(string userId, string code)
+    void ShowTeacherDashboard(string joinCode)
+    {
+        if (teacherDashboard != null)
+        {
+            teacherDashboard.SetActive(true);
+            if (levelSelectPanel != null) levelSelectPanel.SetActive(false);
+            TeacherDashboard td = teacherDashboard.GetComponent<TeacherDashboard>();
+            if (td != null) td.LoadClassroom(joinCode);
+        }
+        else
+        {
+            Debug.LogWarning("[Login] teacherDashboard panel not assigned in Inspector!");
+        }
+    }
+
+    void SaveSessionCookie(string userId, string code, bool isTeacher)
     {
         PlayerPrefs.SetString("sessionUserId",    userId);
         PlayerPrefs.SetString("sessionCode",      code);
-        PlayerPrefs.SetString("sessionTimeEpoch", System.DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+        PlayerPrefs.SetFloat ("sessionTime",      Time.realtimeSinceStartup);
+        PlayerPrefs.SetInt   ("sessionIsTeacher", isTeacher ? 1 : 0);
         PlayerPrefs.Save();
     }
 
@@ -148,27 +187,8 @@ public class LoginManager : MonoBehaviour
         PlayerPrefs.DeleteKey("sessionUserId");
         PlayerPrefs.DeleteKey("sessionCode");
         PlayerPrefs.DeleteKey("sessionTime");
-        PlayerPrefs.DeleteKey("sessionTimeEpoch");
+        PlayerPrefs.DeleteKey("sessionIsTeacher");
         PlayerPrefs.Save();
-    }
-
-    // Syncs completed levels from Firebase into PlayerPrefs, then tells all
-    // level select UI to redraw called right after Session.currentPlayer is set.
-    void SyncProgressAndRefreshUI()
-    {
-        if (Session.currentPlayer == null) return;
-
-        const string prefix = "Level_Completed_";
-        foreach (string levelId in Session.currentPlayer.completedLevelIds)
-            if (int.TryParse(levelId, out int idx))
-                PlayerPrefs.SetInt(prefix + idx, 1);
-        PlayerPrefs.Save();
-
-        foreach (var ui in FindObjectsByType<LevelSelectUI>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-            ui.RefreshAllButtons();
-
-        foreach (var carousel in FindObjectsByType<PlanetCarouselUI>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-            carousel.RefreshAllPanels();
     }
 
     void SetStatus(string msg)
@@ -183,5 +203,7 @@ public class LoginManager : MonoBehaviour
         Session.classroomCode = "";
         Session.currentPlayer = null;
         loginPanel.SetActive(true);
+        if (teacherDashboard  != null) teacherDashboard.SetActive(false);
+        if (levelSelectPanel  != null) levelSelectPanel.SetActive(true);
     }
 }
