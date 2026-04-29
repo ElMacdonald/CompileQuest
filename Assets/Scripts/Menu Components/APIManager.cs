@@ -7,8 +7,10 @@ public class APIManager : MonoBehaviour
 {
     public static APIManager Instance;
 
-    private string inputsURL = "https://api.compilequest.org/inputs";
-    private string parsonsURL = "https://api.compilequest.org/parsons";
+    //private string inputsURL = "https://api.compilequest.org/inputs";
+    private string inputsURL = "http://18.118.196.161/inputs";
+    //private string parsonsURL = "https://api.compilequest.org/parsons";
+    private string parsonsURL = "http://18.118.196.161/parsons";
 
     private void Awake()
     {
