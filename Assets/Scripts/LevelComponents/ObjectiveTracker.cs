@@ -28,10 +28,11 @@ public class ObjectiveTracker : MonoBehaviour
     public int usedLoops;
     public int neededLoops;
 
-    [Header("Lines of Code")]
+    [Header("Lines of Code (Max Budget)")]
+    [Tooltip("Player must complete the level using this many lines or fewer.")]
     public bool linesNeeded;
     public int usedLines;
-    public int neededLines;
+    public int maxLines;
 
     public bool levelWon = false;
 
@@ -69,7 +70,10 @@ public class ObjectiveTracker : MonoBehaviour
             objectives.Add("Loops Used: " + usedLoops + " / " + neededLoops);
 
         if (linesNeeded)
-            objectives.Add("Lines of Code: " + usedLines + " / " + neededLines);
+        {
+            string lineStatus = usedLines <= maxLines ? "✓" : "✗";
+            objectives.Add("Lines of Code: " + usedLines + " / " + maxLines + " max " + lineStatus);
+        }
 
         objectiveDisplay.text = string.Join("\n", objectives);
     }
@@ -102,7 +106,7 @@ public class ObjectiveTracker : MonoBehaviour
         }
         if (linesNeeded)
         {
-            if (usedLines >= neededLines)
+            if (usedLines <= maxLines)
                 levelWon = true;
             else { levelWon = false; return; }
         }

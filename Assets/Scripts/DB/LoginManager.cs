@@ -159,6 +159,8 @@ public class LoginManager : MonoBehaviour
         if (Session.currentPlayer == null) return;
 
         const string prefix = "Level_Completed_";
+        for (int i = 0; i < 45; i++)
+            PlayerPrefs.DeleteKey(prefix + i);
         foreach (string levelId in Session.currentPlayer.completedLevelIds)
             if (int.TryParse(levelId, out int idx))
                 PlayerPrefs.SetInt(prefix + idx, 1);

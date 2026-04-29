@@ -5190,7 +5190,13 @@ PrefabInstance:
       value: spike
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 7689787579348493849, guid: 2c06093ca08475e4aa5020eb91390df2, type: 3}
+    - {fileID: 2485917094729468934, guid: 2c06093ca08475e4aa5020eb91390df2, type: 3}
+    - {fileID: 1360831835611393651, guid: 2c06093ca08475e4aa5020eb91390df2, type: 3}
+    - {fileID: 172280420668391288, guid: 2c06093ca08475e4aa5020eb91390df2, type: 3}
+    - {fileID: 8827958834499088604, guid: 2c06093ca08475e4aa5020eb91390df2, type: 3}
+    - {fileID: 7568288753972318713, guid: 2c06093ca08475e4aa5020eb91390df2, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2c06093ca08475e4aa5020eb91390df2, type: 3}
@@ -5225,4 +5231,4 @@ SceneRoots:
   - {fileID: 2138218899}
   - {fileID: 271119159}
   - {fileID: 1156457545}
-  - {fileID: 52499924}
+  - {fileID: 1965345290}

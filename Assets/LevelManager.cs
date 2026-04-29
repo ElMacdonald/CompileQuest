@@ -37,9 +37,12 @@ public class LevelManager : MonoBehaviour
 
         if (scene.name != "Level Select") return;
 
-        // Sync Firebase completions into PlayerPrefs so the UI reads correctly
+        // Sync Firebase completions into PlayerPrefs so the UI reads correctly.
+        // Wipe all level keys first so stale keys from old sessions can't bleed through.
         if (Session.currentPlayer != null)
         {
+            for (int i = 0; i < 45; i++)
+                PlayerPrefs.DeleteKey(LEVEL_KEY_PREFIX + i);
             foreach (string levelId in Session.currentPlayer.completedLevelIds)
                 if (int.TryParse(levelId, out int idx))
                     PlayerPrefs.SetInt(LEVEL_KEY_PREFIX + idx, 1);
@@ -62,8 +65,8 @@ public class LevelManager : MonoBehaviour
         int adjustedIndex = GetStableLevelIndex();
         if (adjustedIndex < 0)
         {
-            adjustedIndex = levelIndex - 1;
-            Debug.LogWarning($"[LevelManager] Scene name parse failed, falling back to: {adjustedIndex}");
+            Debug.LogWarning($"[LevelManager] Scene name '{SceneManager.GetActiveScene().name}' could not be parsed. Level NOT marked complete. Rename the scene to 'planet-level' format (e.g. '2-3').");
+            return;
         }
 
 #if UNITY_EDITOR

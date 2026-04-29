@@ -240,10 +240,25 @@ public class Movement : MonoBehaviour
 
     private IEnumerator DropThrough()
     {
-        int jumpThroughLayer = LayerMask.NameToLayer("JumpThrough");
-        Physics2D.IgnoreLayerCollision(gameObject.layer, jumpThroughLayer, true);
-        yield return new WaitForSeconds(0.35f);
-        Physics2D.IgnoreLayerCollision(gameObject.layer, jumpThroughLayer, false);
+        Collider2D playerCol = GetComponent<Collider2D>();
+        GameObject[] platforms = GameObject.FindGameObjectsWithTag("JumpThrough");
+        List<Collider2D> platformCols = new List<Collider2D>();
+
+        foreach (GameObject p in platforms)
+        {
+            Collider2D col = p.GetComponent<Collider2D>();
+            if (col != null)
+            {
+                Physics2D.IgnoreCollision(playerCol, col, true);
+                platformCols.Add(col);
+            }
+        }
+
+        yield return new WaitForSeconds(1.05f);
+
+        foreach (Collider2D col in platformCols)
+            if (col != null)
+                Physics2D.IgnoreCollision(playerCol, col, false);
     }
 
     public void Jump(float height)

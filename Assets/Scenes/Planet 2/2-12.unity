@@ -2409,23 +2409,8 @@ MonoBehaviour:
   dialogueBox: {fileID: 2046554254}
   dialogueText: {fileID: 1577708479}
   navImg: {fileID: 190495181}
-  dialogueLines:
-  - Uh oh...
-  - It seems like because of the atmosphere's effects, we can't set my position like
-    we did on Declan...
-  - Not to worry though! You can still change my position by adding to and subtracting
-    from my x position!
-  - By using player.x += (number), you'll be able to move me left and right depending
-    on what's input!
-  - Here, I have a little sample code stored in my memory that inches me to the left.
-  - Take control cap and let's get that gem!
-  dialogueMoods:
-  - shocked
-  - shocked
-  - thinking
-  - 
-  - thinking
-  - happy
+  dialogueLines: []
+  dialogueMoods: []
   sprites:
   - {fileID: 21300000, guid: b184d97667cd58c4588390eb49e55c7e, type: 3}
   - {fileID: 21300000, guid: 3f33658c6e65eb54ea3e8c02d56fbd7b, type: 3}
@@ -5667,4 +5652,4 @@ SceneRoots:
   - {fileID: 573524750}
   - {fileID: 862517009}
   - {fileID: 2074636793}
-  - {fileID: 430186198}
+  - {fileID: 1965345290}
