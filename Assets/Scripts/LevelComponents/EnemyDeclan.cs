@@ -13,6 +13,7 @@ public class EnemyDeclan : MonoBehaviour
         if (shipMovement.power == 10)
         {
             winPanel.SetActive(true);
+            SoundManager.Play("victory");
             Destroy(other.gameObject);
 
             if (Session.currentPlayer != null)

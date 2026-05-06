@@ -78,7 +78,7 @@ public class WinChecker : MonoBehaviour
             Session.currentPlayer.coins += 10;
 
         if (winPanel != null) winPanel.SetActive(true);
-
+        SoundManager.Play("victory");
         if (LevelManager.Instance != null)
             LevelManager.Instance.CompleteLevel(SceneManager.GetActiveScene().buildIndex);
 

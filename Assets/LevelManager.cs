@@ -34,7 +34,10 @@ public class LevelManager : MonoBehaviour
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         _completedThisScene = false;
-
+if (scene.name == "Level Select")
+        SoundManager.Stop("bgm");
+    else
+        SoundManager.Play("bgm");
         if (scene.name != "Level Select") return;
 
         // Sync Firebase completions into PlayerPrefs so the UI reads correctly.

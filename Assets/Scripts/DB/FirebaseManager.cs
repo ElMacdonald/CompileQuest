@@ -2,13 +2,17 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Networking;
 
+// ================================================================
+//  FirebaseManager.cs  —  REPLACE your existing one
+//  Added: SaveWithPin, ExtractPinHash, ParsePlayerDataFromRaw
+// ================================================================
+
 public class FirebaseManager : MonoBehaviour
 {
     public static FirebaseManager Instance { get; private set; }
 
     [Header("Firebase Project ID")]
-    [Tooltip("Set in the Inspector on the title screen. Fallback used when auto-created at runtime.")]
-    public string projectId = "seniorprojectgame-ceb56";
+    public string projectId = "";
 
     private string BaseUrl =>
         $"https://firestore.googleapis.com/v1/projects/{projectId}/databases/(default)/documents";
@@ -26,7 +30,6 @@ public class FirebaseManager : MonoBehaviour
     {
         if (Instance != null && Instance != this)
         {
-            // Copy the inspector projectId to the live instance before destroying this duplicate
             if (!string.IsNullOrEmpty(projectId))
                 Instance.projectId = projectId;
             Destroy(this);
@@ -36,14 +39,28 @@ public class FirebaseManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    // ── Save PlayerData ──────────────────────────────────────
+
     public void Save(string userId, PlayerData data,
         System.Action onSuccess = null,
         System.Action<string> onError = null)
     {
         Session.FlushPlayTime();
-        string json = BuildFirestoreDocument(data);
+        string json = BuildFirestoreDocument(data, null);
         StartCoroutine(PatchDocument("students/" + userId, json, onSuccess, onError));
     }
+
+    // ── Save PlayerData WITH PIN hash (first time login) ─────
+
+    public void SaveWithPin(string userId, PlayerData data, string pinHash,
+        System.Action onSuccess = null,
+        System.Action<string> onError = null)
+    {
+        string json = BuildFirestoreDocument(data, pinHash);
+        StartCoroutine(PatchDocument("students/" + userId, json, onSuccess, onError));
+    }
+
+    // ── Load PlayerData ──────────────────────────────────────
 
     public void Load(string userId,
         System.Action<PlayerData> onSuccess,
@@ -51,6 +68,57 @@ public class FirebaseManager : MonoBehaviour
     {
         StartCoroutine(GetDocument("students/" + userId, onSuccess, onError));
     }
+
+    // ── Load Raw JSON (for PIN verification) ─────────────────
+
+    public void LoadRaw(string path,
+        System.Action<string> onSuccess,
+        System.Action<string> onError = null)
+    {
+        StartCoroutine(GetRawDocument(path, onSuccess, onError));
+    }
+
+    // ── Load all students in a classroom ─────────────────────
+
+    public void LoadClassroom(string classroomCode,
+        System.Action<System.Collections.Generic.List<PlayerData>> onSuccess,
+        System.Action<string> onError = null)
+    {
+        StartCoroutine(QueryClassroom(classroomCode, onSuccess, onError));
+    }
+
+    // ── Extract PIN hash from raw Firestore JSON ─────────────
+
+    public string ExtractPinHash(string firestoreJson)
+    {
+        try
+        {
+            const string key = "\"pinHash\"";
+            int idx = firestoreJson.IndexOf(key);
+            if (idx < 0) return null;
+            idx += key.Length;
+            // Skip to stringValue
+            int sv = firestoreJson.IndexOf("\"stringValue\"", idx);
+            if (sv < 0) return null;
+            sv += "\"stringValue\"".Length;
+            while (sv < firestoreJson.Length && firestoreJson[sv] != '"') sv++;
+            if (sv >= firestoreJson.Length) return null;
+            sv++;
+            int end = sv;
+            while (end < firestoreJson.Length && firestoreJson[end] != '"') end++;
+            return firestoreJson.Substring(sv, end - sv);
+        }
+        catch { return null; }
+    }
+
+    // ── Parse PlayerData from raw Firestore JSON ─────────────
+
+    public PlayerData ParsePlayerDataFromRaw(string firestoreJson)
+    {
+        return ParseFirestoreDocument(firestoreJson);
+    }
+
+    // ── REST Coroutines ──────────────────────────────────────
 
     IEnumerator PatchDocument(string path, string json,
         System.Action onSuccess,
@@ -76,7 +144,7 @@ public class FirebaseManager : MonoBehaviour
         else
         {
 #if UNITY_EDITOR
-            Debug.LogWarning("[Firebase] Save failed: " + req.error);
+            Debug.LogWarning("[Firebase] Save failed: " + req.error + " — " + req.downloadHandler.text);
 #endif
             onError?.Invoke(req.error);
         }
@@ -87,7 +155,6 @@ public class FirebaseManager : MonoBehaviour
         System.Action<string> onError)
     {
         string url = BaseUrl + "/" + path;
-
         using UnityWebRequest req = UnityWebRequest.Get(url);
         yield return req.SendWebRequest();
 
@@ -102,9 +169,7 @@ public class FirebaseManager : MonoBehaviour
         else
         {
             if (req.responseCode == 404)
-            {
                 onSuccess?.Invoke(null);
-            }
             else
             {
 #if UNITY_EDITOR
@@ -115,47 +180,145 @@ public class FirebaseManager : MonoBehaviour
         }
     }
 
-    // Wraps PlayerData as a stringValue field for Firestore
-    string BuildFirestoreDocument(PlayerData data)
+    IEnumerator GetRawDocument(string path,
+        System.Action<string> onSuccess,
+        System.Action<string> onError)
+    {
+        string url = BaseUrl + "/" + path;
+        using UnityWebRequest req = UnityWebRequest.Get(url);
+        yield return req.SendWebRequest();
+
+        if (req.result == UnityWebRequest.Result.Success)
+            onSuccess?.Invoke(req.downloadHandler.text);
+        else if (req.responseCode == 404)
+            onSuccess?.Invoke(null);
+        else
+        {
+            Debug.LogWarning("[Firebase] LoadRaw failed: " + req.error);
+            onError?.Invoke(req.error);
+        }
+    }
+
+    IEnumerator QueryClassroom(string classroomCode,
+        System.Action<System.Collections.Generic.List<PlayerData>> onSuccess,
+        System.Action<string> onError)
+    {
+        string url  = $"https://firestore.googleapis.com/v1/projects/{projectId}/databases/(default)/documents:runQuery";
+        string body = "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"students\"}]," +
+                      "\"where\":{\"fieldFilter\":{\"field\":{\"fieldPath\":\"classroomCode\"}," +
+                      "\"op\":\"EQUAL\",\"value\":{\"stringValue\":\"" + classroomCode + "\"}}}}}";
+
+        byte[] bodyBytes = System.Text.Encoding.UTF8.GetBytes(body);
+        using UnityWebRequest req = new UnityWebRequest(url, "POST");
+        req.uploadHandler   = new UploadHandlerRaw(bodyBytes);
+        req.downloadHandler = new DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+
+        yield return req.SendWebRequest();
+
+        if (req.result == UnityWebRequest.Result.Success)
+            onSuccess?.Invoke(ParseQueryResults(req.downloadHandler.text));
+        else
+        {
+            Debug.LogWarning("[Firebase] Query failed: " + req.error);
+            onError?.Invoke(req.error);
+        }
+    }
+
+    // ── JSON Helpers ─────────────────────────────────────────
+
+    string BuildFirestoreDocument(PlayerData data, string pinHash)
     {
         string inner   = JsonUtility.ToJson(data);
         string escaped = inner.Replace("\\", "\\\\").Replace("\"", "\\\"");
-        return "{\"fields\":{\"json\":{\"stringValue\":\"" + escaped + "\"}}}";
+
+        string fields = "\"json\":{\"stringValue\":\"" + escaped + "\"}," +
+                        "\"classroomCode\":{\"stringValue\":\"" + data.classroomCode + "\"}";
+
+        // Only include pinHash field if provided
+        if (!string.IsNullOrEmpty(pinHash))
+            fields += ",\"pinHash\":{\"stringValue\":\"" + pinHash + "\"}";
+
+        return "{\"fields\":{" + fields + "}}";
     }
 
-    PlayerData ParseFirestoreDocument(string firestoreJson)
+PlayerData ParseFirestoreDocument(string firestoreJson)
+{
+    try
     {
-        try
+        // Find the "json" field specifically, not just any stringValue
+        const string jsonField = "\"json\"";
+        int fieldStart = firestoreJson.IndexOf(jsonField);
+        if (fieldStart < 0) return null;
+
+        const string key = "\"stringValue\"";
+        int start = firestoreJson.IndexOf(key, fieldStart);
+        if (start < 0) return null;
+        start += key.Length;
+        while (start < firestoreJson.Length && firestoreJson[start] != '"') start++;
+        if (start >= firestoreJson.Length) return null;
+        start++;
+
+        int end = start;
+        while (end < firestoreJson.Length)
         {
-            // Firestore REST can format "stringValue" with or without a space before the colon,
-            // so just search for the field name and skip ahead to the opening quote.
+            if (firestoreJson[end] == '\\') { end += 2; continue; }
+            if (firestoreJson[end] == '"')  { break; }
+            end++;
+        }
+        if (end >= firestoreJson.Length) return null;
+
+        string escaped = firestoreJson.Substring(start, end - start);
+        string inner   = escaped.Replace("\\\"", "\"").Replace("\\\\", "\\");
+        return JsonUtility.FromJson<PlayerData>(inner);
+    }
+    catch (System.Exception e)
+    {
+        Debug.LogError("[Firebase] Parse error: " + e.Message);
+        return null;
+    }
+}
+
+    System.Collections.Generic.List<PlayerData> ParseQueryResults(string json)
+    {
+        var list = new System.Collections.Generic.List<PlayerData>();
+        int pos  = 0;
+        while (true)
+        {
+            int docStart = json.IndexOf("\"document\"", pos);
+            if (docStart < 0) break;
+
+            int fieldsStart = json.IndexOf("\"fields\"", docStart);
+            if (fieldsStart < 0) break;
+
             const string key = "\"stringValue\"";
-            int start = firestoreJson.IndexOf(key);
-            if (start < 0) return null;
-            start += key.Length;
-            // Skip whitespace and colon, then land on the opening quote
-            while (start < firestoreJson.Length && firestoreJson[start] != '"') start++;
-            if (start >= firestoreJson.Length) return null;
-            start++; // skip past the opening quote
+            int svStart = json.IndexOf(key, fieldsStart);
+            if (svStart < 0) break;
+            svStart += key.Length;
+            while (svStart < json.Length && json[svStart] != '"') svStart++;
+            if (svStart >= json.Length) break;
+            svStart++;
 
-            // Walk forward to the closing quote, skipping escaped chars
-            int end = start;
-            while (end < firestoreJson.Length)
+            int svEnd = svStart;
+            while (svEnd < json.Length)
             {
-                if (firestoreJson[end] == '\\') { end += 2; continue; } // escaped char
-                if (firestoreJson[end] == '"')  { break; }              // closing quote
-                end++;
+                if (json[svEnd] == '\\') { svEnd += 2; continue; }
+                if (json[svEnd] == '"')  { break; }
+                svEnd++;
             }
-            if (end >= firestoreJson.Length) return null;
 
-            string escaped = firestoreJson.Substring(start, end - start);
+            string escaped = json.Substring(svStart, svEnd - svStart);
             string inner   = escaped.Replace("\\\"", "\"").Replace("\\\\", "\\");
-            return JsonUtility.FromJson<PlayerData>(inner);
+
+            try
+            {
+                PlayerData pd = JsonUtility.FromJson<PlayerData>(inner);
+                if (pd != null) list.Add(pd);
+            }
+            catch { }
+
+            pos = svEnd + 1;
         }
-        catch (System.Exception e)
-        {
-            Debug.LogError("[Firebase] Parse error: " + e.Message);
-            return null;
-        }
+        return list;
     }
 }
