@@ -46,6 +46,6 @@ There are two main types of levels, inputs problems and parsons problems.
 
 A working internet connection and access to a web browser, then go to:
 #### https://compilequest.org
-
+IMPORTANT!!! Use the code teamofsteel to access the site.
 
 When you launch the game, register by entering a Username and a Password and you can get right into the game. As long as you remember your credentials, your session will be saved. 
